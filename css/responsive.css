@@ -1,0 +1,27 @@
+/* ===========================================================
+   responsive.css
+   Breakpoints for Mobile, Tablet & Desktop
+   The background uses `cover`, so it always fills the screen.
+   These breakpoints are where per-device element tweaks will
+   live as we add game elements one by one.
+   =========================================================== */
+
+/* ---------- Mobile (portrait phones) ---------- */
+@media (max-width: 599px) {
+    /* element tweaks for mobile will go here */
+}
+
+/* ---------- Tablet ---------- */
+@media (min-width: 600px) and (max-width: 1023px) {
+    /* element tweaks for tablet will go here */
+}
+
+/* ---------- Desktop ---------- */
+@media (min-width: 1024px) {
+    /* element tweaks for desktop will go here */
+}
+
+/* ---------- Landscape phones / short screens ---------- */
+@media (max-height: 500px) and (orientation: landscape) {
+    /* element tweaks for short landscape screens will go here */
+}

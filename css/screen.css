@@ -1,0 +1,584 @@
+/* ===========================================================
+   screen.css
+   First screen ("Screen 1") — replicated 1:1 from Figma.
+   Every position/size is the Figma coordinate expressed as a
+   percentage of the 1920 x 1080 stage, so the layout matches
+   the design exactly and scales as one unit.
+   =========================================================== */
+
+/* ---------- Spotlight ----------
+   Figma "Polygon 4": x=645 y=0 w=618 h=1103.
+   Centered on x=954 (49.69%), full-height beam, behind everything. */
+.spotlight {
+    position: absolute;
+    top: 0;
+    left: 49.69%;
+    transform: translateX(-50%);
+    height: 102.13%; /* 1103 / 1080 */
+    width: auto;
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* ---------- Floor shadows & glow ----------
+   Recreated from the Figma ellipses (blurred assets) using
+   radial gradients so they stay self-contained. */
+.floor {
+    position: absolute;
+    pointer-events: none;
+    border-radius: 50%;
+}
+
+/* Soft dark contact shadows under each bot */
+.floor--shadow {
+    height: 7.22%; /* 78 / 1080 */
+    background: radial-gradient(
+        ellipse at center,
+        rgba(15, 8, 4, 0.55) 0%,
+        rgba(15, 8, 4, 0.32) 45%,
+        rgba(15, 8, 4, 0) 72%
+    );
+    z-index: 2;
+}
+
+/* Ellipse 3 — under purple bot: x=209 y=898 w=335 h=78 */
+.floor--purple {
+    left: 10.885%;
+    top: 83.148%;
+    width: 17.448%;
+}
+
+/* Ellipse 4 — under white bot: x=1345 y=898 w=320 h=78 */
+.floor--white {
+    left: 70.052%;
+    top: 83.148%;
+    width: 16.667%;
+}
+
+/* Ellipse 1 — under orange bot: x=802 y=971 w=320 h=78 */
+.floor--orange {
+    left: 41.771%;
+    top: 89.907%;
+    width: 16.667%;
+}
+
+/* Ellipse 2 — warm glow pool under the orange bot:
+   x=675 y=915 w=584 h=150 */
+.floor--glow {
+    left: 35.156%;
+    top: 84.722%;
+    width: 30.417%;
+    height: 13.889%;
+    background: radial-gradient(
+        ellipse at center,
+        rgba(255, 196, 128, 0.55) 0%,
+        rgba(255, 158, 74, 0.28) 45%,
+        rgba(255, 140, 60, 0) 75%
+    );
+    mix-blend-mode: screen;
+    z-index: 3;
+}
+
+/* ---------- Bots ----------
+   Sized by width (% of stage) at the exact Figma top/left.
+   The SVG intrinsic sizes match the Figma node sizes, so the
+   heights come out correct automatically. */
+.bot {
+    position: absolute;
+    height: auto;
+    cursor: default; /* only the focal/clickable bot gets pointer + hover */
+    z-index: 5;
+    transition: transform 0.15s ease, filter 0.15s ease;
+    transform-origin: bottom center;
+}
+
+/* Left — purple bot: x=137 y=336 w=478 */
+.bot--purple {
+    left: 7.135%;
+    top: 31.111%;
+    width: 24.896%;
+    /* L1 side bot: dimmed a little so it recedes like the right bot.
+       (Reset to full brightness when it becomes the L2 focal bot.) */
+    filter: brightness(0.8);
+}
+
+/* Center — orange bot (focal/clickable in L1): x=729.24 y=422 w=449.43 */
+.bot--orange {
+    left: 37.981%;
+    top: 39.074%;
+    width: 23.408%;
+    z-index: 6; /* in front of the side bots */
+    cursor: pointer;
+}
+
+/* Right — white & blue bot: x=1327 y=417 w=356 */
+.bot--white-blue {
+    left: 69.115%;
+    top: 38.611%;
+    width: 18.542%;
+}
+
+/* Hover feedback only on the focal/clickable bot (orange in L1).
+   The L2 focal bot (purple) gets its own hover in the level-2 block. */
+.bot--orange:hover {
+    transform: scale(1.03);
+}
+
+/* ---------- Stage spotlight (animated cue) ----------
+   Screen 1 first shows ALL bots at normal lighting; then `.is-lit` is
+   added (by Screen1Intro.play after a beat) and the spotlight animates
+   on — the beam sweeps onto the centre bot and the surround darkens,
+   like a real magic-show / stage spotlight. */
+.screen--1::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 7; /* above the bots (z5/6), below the question banner (z10) */
+    background: radial-gradient(
+        ellipse 34% 78% at 50% 50%,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 0) 26%,
+        rgba(0, 0, 0, 0.55) 58%,
+        rgba(0, 0, 0, 0.85) 100%
+    );
+    opacity: 0; /* off: no darkening, all bots normally lit */
+    transition: opacity 0.85s ease;
+}
+.screen--1.is-lit::after {
+    opacity: 1; /* on: surround darkens */
+}
+
+/* Beam: hidden until the cue, then sweeps onto the centre bot (pivots at
+   the top, like a real stage light) and reads brighter. */
+.screen--1 .spotlight {
+    opacity: 0;
+    transform: translateX(-50%) rotate(-18deg);
+    transform-origin: 50% 0%;
+    filter: brightness(1.4) contrast(1.08) saturate(1.1);
+    transition: opacity 0.4s ease, transform 1s cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+.screen--1.is-lit .spotlight {
+    opacity: 1;
+    transform: translateX(-50%) rotate(0deg);
+}
+
+/* ---------- Question banner ----------
+   Figma "Question_template": x=28 y=45 w=1865 h=145 */
+.question {
+    position: absolute;
+    left: 1.458%;
+    top: 4.167%;
+    width: 97.135%;
+    z-index: 10;
+}
+
+.question__template {
+    width: 100%;
+    height: auto;
+}
+
+/* ---- Closed-banner art (the closing screens 2/3/4/5/6/8) ----
+   CLOSED = the dedicated badge image (`Question_template_close.webp`); OPEN =
+   the full `Question_template.webp`. To feel like the banner CLOSING (not just
+   a fade-swap), the full template ROLLS shut via clip-path (see the per-screen
+   `.question__template` rules) while this badge image fades in ON TOP of the
+   rolled-up cap. Screen 1's banner is always-open, so it's excluded. */
+.screen--2 .question::before,
+.screen--3 .question::before,
+.screen--4 .question::before,
+.screen--5 .question::before,
+.screen--6 .question::before,
+.screen--8 .question::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: url("../assets/images/Question_template_close.webp") no-repeat left center / 100% 100%;
+    opacity: 1; /* closed: badge visible */
+    transition: opacity 0.45s ease;
+    pointer-events: none;
+    z-index: 1; /* above the rolling template, below the avatar */
+}
+.screen--2 .question.is-open::before,
+.screen--3 .question.is-open::before,
+.screen--4 .question.is-open::before,
+.screen--5 .question.is-open::before,
+.screen--6 .question.is-open::before,
+.screen--8 .question.is-open::before {
+    opacity: 0; /* open: badge hidden, full banner shows */
+}
+
+/* Talking mascot video overlaid on the template's avatar face.
+   Sits inside the badge frame; the template image provides the
+   surrounding border. */
+.question__avatar {
+    position: absolute;
+    left: 0.8%;
+    top: 9%;
+    width: 7.2%;
+    height: 77%;
+    object-fit: cover;
+    object-position: center 32%;
+    border-radius: 0.9cqw;
+    pointer-events: none;
+    z-index: 2; /* above the close-badge image so the bot shows */
+}
+
+/* Screen 1 intro (plays when `.is-intro` is added on "Let's Play").
+   The banner pops in from the left (mascot), then unrolls open. */
+.screen--1.is-intro .question {
+    transform-origin: left center;
+    animation: questionPop 0.35s ease both;
+}
+
+.screen--1.is-intro .question__template {
+    animation: templateUnroll 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.35s both;
+}
+
+@keyframes questionPop {
+    from {
+        opacity: 0;
+        transform: scale(0.7);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes templateUnroll {
+    from {
+        clip-path: inset(0 91.7% 0 0); /* show only the left ~8.8% (mascot) */
+    }
+    to {
+        clip-path: inset(0 0 0 0); /* fully open */
+    }
+}
+
+/* Text "Tap the bot to fix its batteries."
+   Figma text node: x=179.19 y=31.62 within the template,
+   Rajdhani Bold, 45px, #4f2b0f. */
+.question__text {
+    position: absolute;
+    left: 9.608%; /* 179.19 / 1865 */
+    top: 27.81%; /* 31.62 / 145  */
+
+    margin: 0;
+    color: #4f2b0f;
+    font-family: "Rajdhani", sans-serif;
+    font-weight: 700;
+    font-size: 2.344cqw; /* 45 / 1920 */
+    line-height: 1;
+    white-space: nowrap;
+}
+
+/* ===========================================================
+   Level 2 Overrides
+   =========================================================== */
+
+/* Swap bot positions: Purple in center (active), Orange on left (completed) */
+.level-2 .bot--purple {
+    left: 36.585%;
+    top: 35.81%;
+    width: 26.2%;
+    z-index: 6;
+    cursor: pointer; /* focal/clickable in L2 */
+    filter: none; /* focal bot is fully lit (not the dimmed L1 side bot) */
+}
+.level-2 .bot--purple:hover {
+    transform: scale(1.03);
+}
+
+.level-2 .bot--orange {
+    left: 8.98%;
+    top: 38.611%;
+    width: 21.19%;
+    z-index: 5;
+    cursor: default; /* already fixed */
+    filter: brightness(0.7);
+}
+.level-2 .bot--orange:hover {
+    transform: none; /* disable hover scale for fixed bot */
+}
+
+/* Swap floor shadows - scoped to Screen 1 so they don't leak into Screen 5 */
+.level-2 .screen--1 .floor--purple {
+    left: 40.961%;
+    top: 89.907%;
+    width: 17.448%;
+}
+
+.level-2 .screen--1 .floor--orange {
+    left: 11.25%;
+    top: 83.148%;
+    width: 16.667%;
+}
+
+/* Purple floor glow under centered Purple bot - scoped to Screen 1 */
+.level-2 .screen--1 .floor--glow {
+    left: 34.477%;
+    background: radial-gradient(
+        ellipse at center,
+        rgba(215, 120, 255, 0.55) 0%,
+        rgba(155, 50, 255, 0.28) 45%,
+        rgba(120, 30, 255, 0) 75%
+    );
+}
+
+/* Purple bot zoom transitions (chest battery icon) */
+.level-2 .screen--1.is-zooming,
+.level-2 .screen--2.is-entering,
+.level-2 .screen--2.is-zooming-out,
+.level-2 .screen--4.is-zooming-out,
+.level-2 .screen--3.is-revealing {
+    transform-origin: 50% 70% !important;
+}
+
+/* ===========================================================
+   L2+ bot chooser — scrollable carousel
+   From Level 2 the player browses a horizontal row of bots and
+   taps one to fix it. In L1 (tutorial) the carousel is hidden and
+   the fixed 3-bot layout above is used instead.
+   =========================================================== */
+.bot-carousel {
+    display: none;
+}
+.level-2 .bot-carousel {
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 26%;
+    height: 66%;
+    z-index: 5;
+}
+/* In the chooser, hide the fixed L1 bots and their floor shadows. */
+.level-2 .bot--purple,
+.level-2 .bot--orange,
+.level-2 .bot--white-blue,
+.level-2 .screen--1 .floor {
+    display: none !important;
+}
+
+.bot-carousel__track {
+    display: flex;
+    align-items: flex-end;
+    gap: 4cqw; /* even spacing between bots */
+    height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    /* big side padding so any bot can scroll to the centre and the
+       neighbouring bots only peek in from the screen edges */
+    padding: 0 39cqw;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.bot-carousel__track::-webkit-scrollbar {
+    display: none;
+}
+/* During the scroll hint, snap is disabled so the pan animation runs smoothly. */
+.bot-carousel.no-snap .bot-carousel__track {
+    scroll-snap-type: none;
+}
+
+/* Prev / Next arrow buttons — for desktop play and kids who don't scroll.
+   Glossy gold button art; the prev arrow points left, next is mirrored. */
+.carousel-nav {
+    position: absolute;
+    top: 46%;
+    transform: translateY(-50%);
+    width: 8.5cqw;
+    height: 6.4cqw; /* 485:365 aspect of next_button.webp */
+    border: 0;
+    padding: 0;
+    background: url("../assets/images/next_button.webp") no-repeat center / 100% 100%;
+    cursor: pointer;
+    z-index: 20; /* above the bots */
+    filter: drop-shadow(0 0.5cqw 0.6cqw rgba(0, 0, 0, 0.35));
+    transition: transform 0.12s ease, filter 0.12s ease, opacity 0.4s ease;
+}
+.carousel-nav--prev {
+    left: 3cqw;
+}
+.carousel-nav--next {
+    right: 3cqw;
+    transform: translateY(-50%) scaleX(-1); /* mirror → points right */
+}
+.carousel-nav--prev:hover { transform: translateY(-50%) scale(1.07); }
+.carousel-nav--next:hover { transform: translateY(-50%) scaleX(-1) scale(1.07); }
+.carousel-nav--prev:active { transform: translateY(-50%) scale(0.93); }
+.carousel-nav--next:active { transform: translateY(-50%) scaleX(-1) scale(0.93); }
+/* hide the arrows once a bot is picked (during the spotlight + zoom-in) */
+.screen--1.is-choosing .carousel-nav {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+/* The arrows appear only AFTER all the bots have arrived: while the chooser's
+   elements slide in from the right (`is-elements-in`) the arrows stay hidden,
+   then fade in when that class is removed (finalizeTurn) and the row is settled. */
+.screen--1.is-elements-in .carousel-nav {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Staged like Screen 1: the centred bot is big & in front, the bots to the
+   sides are progressively smaller and set back (scaled by carousel.js as you
+   scroll), and every bot has a floor shadow. */
+.carousel-bot {
+    flex: 0 0 24cqw;
+    scroll-snap-align: center;
+    height: 100%;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    transform-origin: bottom center; /* shrink toward the feet */
+    transition: transform 0.25s ease, filter 0.25s ease;
+}
+.carousel-bot img {
+    width: 100%;
+    height: auto;
+    pointer-events: none;
+    -webkit-user-drag: none;
+    position: relative;
+    z-index: 1;
+}
+/* Floor shadow under each bot (sits at the feet; scales with the bot). */
+.carousel-bot::before {
+    content: "";
+    position: absolute;
+    bottom: 1.5%;
+    left: 50%;
+    width: 78%;
+    height: 5.5%;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: radial-gradient(
+        ellipse at center,
+        rgba(15, 8, 4, 0.5) 0%,
+        rgba(15, 8, 4, 0.28) 45%,
+        rgba(15, 8, 4, 0) 72%
+    );
+    z-index: 0;
+}
+/* While a bot is being chosen, the spotlight dims all but the selected one
+   (filter only — the depth scale is handled by carousel.js via transform). */
+.screen--1.is-choosing .carousel-bot {
+    filter: brightness(0.4);
+}
+.screen--1.is-choosing .carousel-bot.is-selected {
+    filter: none;
+}
+
+/* A fixed bot shows its charged image happily dancing and can't be re-picked. */
+.carousel-bot.is-fixed {
+    cursor: default;
+}
+.carousel-bot.is-fixed img {
+    animation: botDance 1.25s ease-in-out infinite;
+    transform-origin: bottom center;
+}
+
+/* Phase visibility: Part 1 (charge) shows ONLY the low bots; Part 2 (split)
+   shows ONLY the overcharged bots. Fixed bots of the current state keep
+   dancing; off-state bots (e.g. Part 1's charged low bots during Part 2) are
+   hidden entirely. */
+.bot-carousel:not(.phase-split) .carousel-bot[data-state="overcharged"] {
+    display: none;
+}
+.bot-carousel.phase-split .carousel-bot[data-state="low"] {
+    display: none;
+}
+.carousel-bot.is-locked {
+    display: none !important;
+}
+/* In the split phase the broken (overcharged) bots pulse a red glow to draw
+   the eye. Uses a ::after glow (opacity) so it never fights the spotlight
+   dim, which is a `filter`. */
+/* Red glow OVER the chest (screen blend adds red light but keeps the white "!"
+   white), so the overcharged bot reads as "chest glowing red" regardless of the
+   recoloured body. */
+.bot-carousel.phase-split .carousel-bot[data-state="overcharged"]:not(.is-fixed)::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 68%; /* roughly over the chest (bots stand at the bottom) */
+    width: 50%;
+    height: 30%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(255, 40, 25, 0.9) 0%, rgba(255, 40, 25, 0) 70%);
+    mix-blend-mode: screen;
+    animation: ocPulse 1.1s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 2; /* in front of the bot image */
+}
+/* whole-bot red rim glow so it clearly reads as overcharged */
+.bot-carousel.phase-split .carousel-bot[data-state="overcharged"]:not(.is-fixed) img {
+    animation: ocRim 1.1s ease-in-out infinite;
+}
+@keyframes ocPulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.95; }
+}
+@keyframes ocRim {
+    0%, 100% { filter: drop-shadow(0 0 0.6cqw rgba(255, 45, 30, 0.65)); }
+    50% { filter: drop-shadow(0 0 1.6cqw rgba(255, 45, 30, 1)); }
+}
+
+/* ---- "Overheated" squiggle marks sitting around an overcharged bot's head ----
+   Matches the Screen-5 white bot's BAKED look: a small fan of short cyan wavy
+   marks hugging the top of the head — static (they do NOT rise/emit from the
+   head), with only a faint in-place shimmer. A `.heat-steam` span (5 `<i>`
+   marks) is injected by carousel.js into every `[data-state="overcharged"]`
+   button. Hidden once the bot is fixed. */
+.heat-steam {
+    position: absolute;
+    left: 50%;
+    bottom: 74%; /* hug the top of the head (bots are bottom-aligned) */
+    transform: translateX(-50%);
+    width: 36%;
+    height: 13%;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    pointer-events: none;
+    z-index: 3; /* above the bot image and the red chest glow */
+}
+.heat-steam i {
+    display: block;
+    width: 15%;
+    height: 100%;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 30'%3E%3Cpath d='M7 30 C13 24 1 21 7 15 C13 9 1 6 7 0' fill='none' stroke='%2384c8cf' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center bottom / contain;
+    transform-origin: bottom center;
+    /* faint breathing shimmer in place — keeps the tilt (--r), never rises */
+    animation: heatShimmer 2.2s ease-in-out infinite;
+}
+/* Fan the marks out in a shallow arc, like the white bot's: outer ones tilt
+   outward + sit a touch shorter, the centre one stands tallest. */
+.heat-steam i:nth-child(1) { --r: -12deg; height: 82%;  animation-delay: 0s;   }
+.heat-steam i:nth-child(2) { --r: -6deg;  height: 94%;  animation-delay: 0.4s; }
+.heat-steam i:nth-child(3) { --r: 0deg;   height: 100%; animation-delay: 0.8s; }
+.heat-steam i:nth-child(4) { --r: 6deg;   height: 94%;  animation-delay: 0.2s; }
+.heat-steam i:nth-child(5) { --r: 12deg;  height: 82%;  animation-delay: 0.6s; }
+@keyframes heatShimmer {
+    0%, 100% { opacity: 0.7; transform: rotate(var(--r)) translateY(0); }
+    50%      { opacity: 1;   transform: rotate(var(--r)) translateY(-6%); }
+}
+/* Per-bot head height differs (each image bakes a different amount of top
+   transparent padding / dome height), so nudge each scheme so the marks hug
+   ITS head. Base (74%) suits red; the others override. */
+.carousel-bot[data-scheme="green"]  .heat-steam { bottom: 64%; }
+.carousel-bot[data-scheme="teal"]   .heat-steam { bottom: 78.5%; }
+.carousel-bot[data-scheme="yellow"] .heat-steam { bottom: 78.5%; }
+
+/* Once fixed (charged + dancing), the bot is no longer overheating */
+.carousel-bot.is-fixed .heat-steam { display: none; }
+
+

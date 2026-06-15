@@ -1,0 +1,262 @@
+/* ===========================================================
+   part2.css
+   Part Two — fixing overcharged bots (split a whole into parts).
+   Mirrors Part One; reuses the shared components (.bot, .spotlight,
+   .floor, .question, .battery*, .panel*, .slot*, .slot-glow*,
+   .charged-bot) and the zoom keyframes from main.css.
+   Screens: 5 (intro) · 6 (split puzzle) · 7 (celebrate) · 8 (concept)
+   =========================================================== */
+
+/* ---------- Screen 5 — overcharged bots intro ---------- */
+.screen--5 {
+    background-image: var(--bg-image);
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+}
+
+/* Three bots; the white/purple one (centre) is the overcharged one to fix */
+.bot--oc-left {
+    left: 7.135%;
+    top: 31.111%;
+    width: 24.896%;
+}
+.bot--oc-center {
+    left: 38.575%;
+    top: 39.074%;
+    width: 22.22%;
+    z-index: 6;
+}
+.bot--oc-right {
+    left: 67.81%; /* 1302 / 1920 */
+    top: 38.611%;
+    width: 21.114%; /* 405 / 1920 */
+}
+
+/* Banner opens/closes (class-driven, like the other screens) */
+.screen--5 .question__template {
+    clip-path: inset(0 100% 0 0); /* closed: rolled shut to the badge */
+    transition: clip-path 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.screen--5 .question.is-open .question__template {
+    clip-path: inset(0 0 0 0);
+}
+
+/* ----- Screen 5 intro choreography -----
+   Phase A: all bots equally lit (spotlight hidden).
+   Phase B: spotlight fades in on the centre bot, sides darken.
+   Phase C: sides removed; the scene zooms in a little on the centre. */
+.s5-stage {
+    position: absolute;
+    inset: 0;
+    transform-origin: 49.7% 70%; /* the centre bot's chest */
+    transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Align floor shadows on Screen 5 to match the bots */
+.screen--5 .floor--white {
+    left: 41.356% !important;
+    top: 89.907% !important;
+    width: 16.667% !important;
+}
+.screen--5 .floor--orange {
+    left: 70.052% !important;
+    top: 83.148% !important;
+    width: 16.667% !important;
+}
+.screen--5 .floor--glow {
+    left: 34.477% !important;
+    top: 84.722% !important;
+    width: 30.417% !important;
+    height: 13.889% !important;
+    background: radial-gradient(
+        ellipse at center,
+        rgba(230, 210, 255, 0.55) 0%,
+        rgba(180, 160, 255, 0.28) 45%,
+        rgba(140, 120, 255, 0) 75%
+    ) !important;
+}
+
+/* Spotlight: starts off, then sweeps onto the centre bot like a real
+   stage light (pivots at the top — the light source). */
+.screen--5 .spotlight {
+    opacity: 0;
+    transform: translateX(-50%) rotate(-20deg);
+    transform-origin: 50% 0%;
+    /* fade in quickly so the sweep itself is visible */
+    transition: opacity 0.35s ease,
+        transform 1.2s cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+.screen--5.is-spotlit .spotlight {
+    opacity: 1;
+    transform: translateX(-50%) rotate(0deg);
+}
+
+/* (The purple bot's "!" overcharge mark is now baked into purple_bot.webp.) */
+
+/* side bots dim under the spotlight, then fade out */
+.screen--5 .bot--oc-left,
+.screen--5 .bot--oc-right {
+    transition: filter 0.5s ease, opacity 0.5s ease;
+}
+.screen--5.is-spotlit .bot--oc-left,
+.screen--5.is-spotlit .bot--oc-right {
+    filter: brightness(0.4);
+}
+.bot--oc-left.is-gone,
+.bot--oc-right.is-gone {
+    opacity: 0 !important;
+}
+
+/* phase C: fade the side contact shadows + zoom the scene in a little */
+.s5-stage.is-focusing .floor--shadow {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+.s5-stage.is-focusing {
+    transform: scale(1.4);
+}
+
+/* ---------- Screen 6 — split puzzle ---------- */
+.screen--6 {
+    /* fixed cream background outside the panel (same for every bot/level) */
+    background: #fbe7cb;
+}
+.s6-content {
+    position: absolute;
+    inset: 0;
+    transform: translateY(15%);
+    transition: transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.screen--6 .question__template {
+    clip-path: inset(0 100% 0 0); /* closed: rolled shut to the badge */
+    transition: clip-path 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.screen--6 .question.is-open .question__template {
+    clip-path: inset(0 0 0 0);
+}
+.screen--6 .slot-glow--big {
+    opacity: 1;
+    animation: slotGlowPulse 1.3s ease-in-out infinite alternate;
+    transition: filter 0.6s ease;
+}
+.screen--6 .slot-glow--big.is-red {
+    filter: drop-shadow(0 0 0.9cqw rgba(255, 59, 59, 0.95)) drop-shadow(0 0 2cqw rgba(255, 59, 59, 0.65));
+}
+.screen--6 .panel--big {
+    transition: filter 0.6s ease;
+}
+.screen--6 .panel--big.is-red {
+    filter: none;
+}
+.screen--6 .slot-glow--big.is-yellow {
+    filter: hue-rotate(55deg) drop-shadow(0 0 0.9cqw rgba(255, 235, 59, 0.95)) drop-shadow(0 0 2cqw rgba(255, 235, 59, 0.65));
+}
+.screen--6 .slot-glow--big.is-normal {
+    opacity: 1;
+    animation: none;
+    filter: none;
+}
+.screen--6 .panel--big.is-normal {
+    filter: none;
+}
+.screen--8 .slot-glow--big.is-green {
+    filter: hue-rotate(143deg) drop-shadow(0 0 0.9cqw rgba(70, 255, 140, 0.95)) drop-shadow(0 0 2cqw rgba(70, 255, 140, 0.65));
+}
+
+/* ---------- Screen 7 — the fixed bot celebrates ---------- */
+.screen--7 {
+    background-image: var(--bg-image);
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+}
+.screen--7.is-active .charged-bot img {
+    animation: botDance 1.25s ease-in-out infinite;
+}
+
+/* ---------- Screen 8 — concept: a whole is made of 2 parts ---------- */
+.screen--8 {
+    /* fixed cream background outside the panel (same for every bot/level) */
+    background: #fbe7cb;
+}
+.screen--8 .question__template {
+    clip-path: inset(0 100% 0 0); /* closed: rolled shut to the badge */
+    transition: clip-path 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.screen--8 .question.is-open .question__template {
+    clip-path: inset(0 0 0 0);
+}
+.screen--8 .battery {
+    transition: opacity 0.4s ease;
+}
+.screen--8 .battery.is-dim {
+    opacity: 0.2;
+}
+.screen--8 .slot-glow.is-charged {
+    animation: slotGlowPulse 1.3s ease-in-out infinite alternate;
+}
+
+/* ---------- Part 2 zoom transitions (white/purple bot's chest) ---------- */
+.screen--5.is-zooming {
+    transform-origin: 49.7% 70%;
+    animation: zoomIntoBot 0.75s cubic-bezier(0.42, 0, 1, 1) forwards;
+    pointer-events: none;
+    will-change: transform, opacity;
+}
+.screen--6.is-entering {
+    transform-origin: 49.7% 70%;
+    animation: enterInsideBot 0.72s cubic-bezier(0, 0, 0.2, 1);
+    will-change: transform, opacity;
+}
+.screen--6.is-zooming-out,
+.screen--8.is-zooming-out { /* concept (Screen 8) reveals the dancing bot */
+    transform-origin: 49.7% 70%;
+    animation: zoomOutOfBot 0.55s cubic-bezier(0.42, 0, 1, 1) forwards;
+    pointer-events: none;
+    will-change: transform, opacity;
+}
+.screen--7.is-revealing {
+    transform-origin: 49.7% 70%;
+    animation: revealBot 0.8s cubic-bezier(0, 0, 0.2, 1);
+    will-change: transform, opacity;
+}
+
+/* Blue hue shift filter for Level 2 overcharged / celebrating bots */
+.hue-blue {
+    filter: hue-rotate(-60deg) !important;
+}
+
+/* (Part 2 boards are now pre-coloured panel images — white (L1) / blue (L2) —
+   so the old grayscale-from-orange conversion is no longer needed.) */
+
+/* White slot highlight for splitting puzzle (since White Bot is selected) */
+.screen--6 .slot.is-hover {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    box-shadow: inset 0 0 0 0.2cqw rgba(255, 255, 255, 0.85) !important,
+        0 0 1.5cqw rgba(255, 255, 255, 0.55) !important;
+}
+
+/* Purple slot highlight for Level 2 (since Purple Bot is selected) */
+.level-2 .slot.is-hover {
+    background-color: rgba(210, 120, 255, 0.12) !important;
+    box-shadow: inset 0 0 0 0.2cqw rgba(210, 120, 255, 0.85) !important,
+        0 0 1.5cqw rgba(210, 120, 255, 0.55) !important;
+}
+
+/* Force slot shadow transitions to resolve to white (Screen 6) or purple (Level 2) instead of orange */
+.screen--6 .slot {
+    box-shadow: inset 0 0 0 0.2cqw rgba(255, 255, 255, 0),
+        0 0 1.5cqw rgba(255, 255, 255, 0);
+}
+
+.level-2 .slot {
+    box-shadow: inset 0 0 0 0.2cqw rgba(210, 120, 255, 0),
+        0 0 1.5cqw rgba(210, 120, 255, 0);
+}
+
+/* White slot glow overlays for Screen 8 concept teaching */
+.screen--8 .slot-glow--small-left,
+.screen--8 .slot-glow--small-right {
+    filter: grayscale(1) brightness(1.5) drop-shadow(0 0 0.9cqw rgba(255, 255, 255, 0.95)) drop-shadow(0 0 2cqw rgba(255, 255, 255, 0.65)) !important;
+}

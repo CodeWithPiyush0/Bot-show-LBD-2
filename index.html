@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Bot Show - LBD 1</title>
+
+    <!-- Fonts: Rajdhani -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    />
+
+    <!-- Preload the start-screen image (the actual first paint) -->
+    <link rel="preload" as="image" href="assets/images/Pre_LBD.webp" />
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/reset.css" />
+    <link rel="stylesheet" href="css/main.css" />
+    <link rel="stylesheet" href="css/screen.css" />
+    <link rel="stylesheet" href="css/screen2.css" />
+    <link rel="stylesheet" href="css/screen3.css" />
+    <link rel="stylesheet" href="css/screen4.css" />
+    <link rel="stylesheet" href="css/part2.css" />
+    <link rel="stylesheet" href="css/responsive.css" />
+</head>
+<body>
+    <!-- Game container: keeps the background and all game elements -->
+    <main class="game" id="game">
+        <div class="game__screen" id="stage">
+
+            <!-- ===== PRE-LBD - start screen ===== -->
+            <section class="screen screen--pre is-active" id="screen-pre" data-screen="pre">
+                <button class="play-btn--icon" id="play-btn" type="button" aria-label="Play">
+                    <img src="assets/images/play_btn2.webp" alt="" draggable="false" />
+                </button>
+            </section>
+
+            <!-- ===== SCREEN 1 - choose the bot ===== -->
+            <section class="screen screen--1" id="screen-1" data-screen="1">
+
+                <!-- Spotlight beam focused on the center (orange) bot -->
+                <img
+                    class="spotlight"
+                    src="assets/images/spotlight.svg"
+                    alt=""
+                    aria-hidden="true"
+                />
+
+                <!-- Floor shadows & warm glow (recreated from Figma ellipses) -->
+                <div class="floor floor--shadow floor--purple" aria-hidden="true"></div>
+                <div class="floor floor--shadow floor--white" aria-hidden="true"></div>
+                <div class="floor floor--shadow floor--orange" aria-hidden="true"></div>
+                <div class="floor floor--glow" aria-hidden="true"></div>
+
+                <!-- The three bots -->
+                <img
+                    class="bot bot--purple"
+                    src="assets/images/purple_bot_low.webp"
+                    alt="Purple bot"
+                    data-bot="purple"
+                />
+                <img
+                    class="bot bot--orange"
+                    src="assets/images/orange_bot.webp"
+                    alt="Orange bot"
+                    data-bot="orange"
+                />
+                <img
+                    class="bot bot--white-blue"
+                    src="assets/images/White_blue_bot.webp"
+                    alt="White and blue bot"
+                    data-bot="white-blue"
+                />
+
+                <!-- L2+ scrollable bot chooser (hidden in the L1 tutorial).
+                     Two phases per level: the CHARGE phase shows the low bots,
+                     then the SPLIT phase shows the overcharged bots (highlighted).
+                     carousel.js toggles which set is visible. -->
+                <div class="bot-carousel" id="bot-carousel" aria-hidden="true">
+                    <div class="bot-carousel__track" id="bot-carousel-track">
+                        <!-- Low bots (CHARGE phase) -->
+                        <!-- gold/yellow (recoloured from orange) so the Part-1 LEVELS don't reuse
+                             the orange bot the player already fixed in the Part-1 tutorial -->
+                        <button class="carousel-bot" type="button" data-scheme="gold" data-state="low">
+                            <img src="assets/images/gold_bot_low.webp" alt="Low gold bot" draggable="false" />
+                        </button>
+                        <button class="carousel-bot" type="button" data-scheme="blue" data-state="low">
+                            <img src="assets/images/blue_bot_low.webp" alt="Low blue bot" draggable="false" />
+                        </button>
+                        <button class="carousel-bot" type="button" data-scheme="purple" data-state="low">
+                            <img src="assets/images/purple_bot_low.webp" alt="Low purple bot" draggable="false" />
+                        </button>
+                        <button class="carousel-bot" type="button" data-scheme="pink" data-state="low">
+                            <img src="assets/images/pink_bot_low.webp" alt="Low pink bot" draggable="false" />
+                        </button>
+                        <!-- Overcharged bots (SPLIT phase) — a DIFFERENT colour set
+                             from the low bots so no bot is reused for both states.
+                             (A CSS red chest-glow is layered on in the chooser.) -->
+                        <button class="carousel-bot" type="button" data-scheme="red" data-state="overcharged">
+                            <img src="assets/images/red_bot_overcharged.webp" alt="Overcharged red bot" draggable="false" />
+                        </button>
+                        <button class="carousel-bot" type="button" data-scheme="green" data-state="overcharged">
+                            <img src="assets/images/green_bot_overcharged.webp" alt="Overcharged green bot" draggable="false" />
+                        </button>
+                        <button class="carousel-bot" type="button" data-scheme="teal" data-state="overcharged">
+                            <img src="assets/images/teal_bot_overcharged.webp" alt="Overcharged teal bot" draggable="false" />
+                        </button>
+                        <button class="carousel-bot" type="button" data-scheme="yellow" data-state="overcharged">
+                            <img src="assets/images/yellow_bot_overcharged.webp" alt="Overcharged yellow bot" draggable="false" />
+                        </button>
+                    </div>
+                    <!-- Prev / Next arrows (for desktop / kids who don't scroll) -->
+                    <button class="carousel-nav carousel-nav--prev" id="carousel-prev" type="button" aria-label="Previous bot"></button>
+                    <button class="carousel-nav carousel-nav--next" id="carousel-next" type="button" aria-label="Next bot"></button>
+                </div>
+
+                <!-- Question banner at the top -->
+                <div class="question">
+                    <img
+                        class="question__template"
+                        src="assets/images/Question_template.webp"
+                        alt=""
+                        aria-hidden="true"
+                    />
+                    <video
+                        class="question__avatar"
+                        src="assets/videos/bite_talking.mp4"
+                        muted
+                        loop
+                        autoplay
+                        playsinline
+                        preload="auto"
+                        aria-hidden="true"
+                    ></video>
+                    <p class="question__text" data-text="Tap the bot to fix its batteries." data-text2="Scroll and tap a bot to fix it."></p>
+                </div>
+
+            </section>
+
+            <!-- ===== SCREEN 2 - inside the bot (place the batteries) ===== -->
+            <section class="screen screen--2" id="screen-2" data-screen="2">
+
+                <!-- Gameplay content. Scaled down slightly while the
+                     question banner is open, then back to normal. -->
+                <div class="s2-content is-compact" id="s2-content">
+
+                    <!-- Circuit-board panel (border + slots + connectors) -->
+                    <img
+                        class="panel"
+                        data-src="assets/images/panel_orange.webp"
+                        alt=""
+                        aria-hidden="true"
+                    />
+                    <!-- Overlay exact original orange small slots so they don't turn green, and act as z-index covers -->
+                    <img
+                        class="panel panel--small-left"
+                        data-src="assets/images/panel_orange.webp"
+                        alt=""
+                        aria-hidden="true"
+                    />
+                    <img
+                        class="panel panel--small-right"
+                        data-src="assets/images/panel_orange.webp"
+                        alt=""
+                        aria-hidden="true"
+                    />
+                    <img
+                        class="panel panel--big"
+                        data-src="assets/images/panel_orange.webp"
+                        alt=""
+                        aria-hidden="true"
+                    />
+
+                    <!-- Green glow overlay for the charged top slot.
+                         Uses the standalone slot art so the glow hugs
+                         its exact rounded shape. -->
+                    <img
+                        class="slot-glow slot-glow--big"
+                        data-src="assets/images/Bigger_Slot.svg"
+                        alt=""
+                        aria-hidden="true"
+                    />
+
+                    <!-- Slot drop-zones (overlay the panel's recesses) -->
+                    <div class="slot slot--big" data-slot="big" aria-hidden="true"></div>
+                    <div class="slot slot--small-left" data-slot="small-left" aria-hidden="true"></div>
+                    <div class="slot slot--small-right" data-slot="small-right" aria-hidden="true"></div>
+
+                    <!-- Current flows through the orange connectors
+                         (paths trace the exact connector centerlines). -->
+                    <svg
+                        class="charge-fx"
+                        id="charge-fx"
+                        viewBox="0 0 1920 1080"
+                        preserveAspectRatio="none"
+                        aria-hidden="true"
+                    >
+                        <g class="charge-glow">
+                            <path d="M 660 540 L 748 420" />
+                            <path d="M 1260 540 L 1172 420" />
+                            <path d="M 850 628 L 1070 628" />
+                        </g>
+                        <!-- Travelling current pulses (diagonals only; the
+                             horizontal left->right connector is intentionally
+                             not animated). -->
+                        <g class="charge-flow">
+                            <path d="M 660 540 L 748 420" />
+                            <path d="M 1260 540 L 1172 420" />
+                        </g>
+                    </svg>
+
+                    <!-- Battery trays at the bottom -->
+                    <div class="tray tray--blue">
+                        <div class="tray__inner"></div>
+                        <div class="tray__deco tray__deco--top"><i></i><i></i><i></i></div>
+                        <div class="tray__deco tray__deco--bottom"><i></i><i></i><i></i></div>
+                        <div class="tray__deco tray__deco--left"><i></i><i></i><i></i></div>
+                        <div class="tray__deco tray__deco--right"><i></i><i></i><i></i></div>
+                    </div>
+                    <div class="tray tray--yellow">
+                        <div class="tray__inner"></div>
+                        <div class="tray__deco tray__deco--top"><i></i><i></i><i></i></div>
+                        <div class="tray__deco tray__deco--bottom"><i></i><i></i><i></i></div>
+                        <div class="tray__deco tray__deco--left"><i></i><i></i><i></i></div>
+                        <div class="tray__deco tray__deco--right"><i></i><i></i><i></i></div>
+                    </div>
+
+                    <!-- Batteries are injected here by js/batteries.js -->
+
+                </div>
+
+                <!-- Question banner: opens on entry, types the prompt,
+                     holds, then closes back to just the mascot face. -->
+                <div class="question" id="question-2">
+                    <img
+                        class="question__template"
+                        src="assets/images/Question_template.webp"
+                        alt=""
+                        aria-hidden="true"
+                    />
+                    <video
+                        class="question__avatar"
+                        src="assets/videos/bite_talking.mp4"
+                        muted
+                        loop
+                        autoplay
+                        playsinline
+                        preload="auto"
+                        aria-hidden="true"
+                    ></video>
+                    <p class="question__text" data-text="Drag the batteries in a small slots."></p>
+                </div>
+
+            </section>
+
+            <!-- ===== SCREEN 3 - the charged bot celebrates ===== -->
+            <section class="screen screen--3" id="screen-3" data-screen="3">
+
+                <!-- Spotlight on the bot -->
+                <img
+                    class="spotlight"
+                    src="assets/images/spotlight.svg"
+                    alt=""
+                    aria-hidden="true"
+                />
+
+                <!-- Fully-charged bot (static image placeholder; swap for a
+                     dancing video later). -->
+                <div class="charged-bot">
+                    <img
+                        data-src="assets/images/orange_bot_charged.webp"
+                        alt="The bot, fully charged"
+                    />
+                </div>
+
+                <!-- Banner: announces the result while the bot dances -->
+                <div class="question" id="question-3">
+                    <img class="question__template" src="assets/images/Question_template.webp" alt="" aria-hidden="true" />
+                    <video class="question__avatar" src="assets/videos/bite_talking.mp4" muted loop autoplay playsinline preload="auto" aria-hidden="true"></video>
+                    <p class="question__text" data-text="The bot is fully charged."></p>
+                </div>
+
+            </section>
+
+            <!-- ===== SCREEN 4 - concept: 2 parts make a whole ===== -->
+            <section class="screen screen--4" id="screen-4" data-screen="4">
+
+                <div class="s4-content" id="s4-content">
+                    <!-- Charged (green) circuit-board panel, same layering
+                         as Screen 2's charged end state. Base panel is green;
+                         the small-slot overlays keep the parts' slots orange;
+                         the big-slot overlay is green (the whole). -->
+                    <img
+                        class="panel"
+                        data-src="assets/images/panel_orange.webp"
+                        alt=""
+                        aria-hidden="true"
+                    />
+                    <img
+                        class="panel panel--small-left"
+                        data-src="assets/images/panel_orange.webp"
+                        alt=""
+                        aria-hidden="true"
+                    />
+                    <img
+                        class="panel panel--small-right"
+                        data-src="assets/images/panel_orange.webp"
+                        alt=""
+                        aria-hidden="true"
+                    />
+                    <img
+                        class="panel panel--big is-green"
+                        data-src="assets/images/panel_orange.webp"
+                        alt=""
+                        aria-hidden="true"
+                    />
+                    <!-- Green glow for the big (whole) slot -->
+                    <img
+                        class="slot-glow slot-glow--big"
+                        data-src="assets/images/Bigger_Slot.svg"
+                        alt=""
+                        aria-hidden="true"
+                    />
+                    <!-- Glow overlays for the small (part) slots -->
+                    <img
+                        class="slot-glow slot-glow--small-left"
+                        data-src="assets/images/Smaller_Slot.svg"
+                        alt=""
+                        aria-hidden="true"
+                    />
+                    <img
+                        class="slot-glow slot-glow--small-right"
+                        data-src="assets/images/Smaller_Slot.svg"
+                        alt=""
+                        aria-hidden="true"
+                    />
+                    <!-- Batteries injected by js/concept.js -->
+                </div>
+
+                <!-- Concept prompt banner -->
+                <div class="question" id="question-4">
+                    <img
+                        class="question__template"
+                        src="assets/images/Question_template.webp"
+                        alt=""
+                        aria-hidden="true"
+                    />
+                    <video
+                        class="question__avatar"
+                        src="assets/videos/bite_talking.mp4"
+                        muted
+                        loop
+                        autoplay
+                        playsinline
+                        preload="auto"
+                        aria-hidden="true"
+                    ></video>
+                    <p class="question__text" data-text="These 2 parts make this whole."></p>
+                </div>
+
+            </section>
+
+            <!-- ================= PART 2 ================= -->
+
+            <!-- ===== SCREEN 5 - overcharged bots intro ===== -->
+            <section class="screen screen--5" id="screen-5" data-screen="5">
+
+                <!-- The scene (bots + spotlight). Wrapped so the "little
+                     zoom" can scale it without scaling the banner. -->
+                <div class="s5-stage" id="s5-stage">
+                    <img class="spotlight" src="assets/images/spotlight.svg" alt="" aria-hidden="true" />
+
+                    <div class="floor floor--shadow floor--purple" aria-hidden="true"></div>
+                    <div class="floor floor--shadow floor--white" aria-hidden="true"></div>
+                    <div class="floor floor--shadow floor--orange" aria-hidden="true"></div>
+                    <div class="floor floor--glow" aria-hidden="true"></div>
+
+                    <img class="bot bot--oc-left" data-src="assets/images/Sahdow_Purple_Bot.webp" alt="Overcharged purple bot" />
+                    <img class="bot bot--oc-center" data-src="assets/images/White_purple_bot.webp" alt="Overcharged bot" data-bot="center" />
+                    <img class="bot bot--oc-right" data-src="assets/images/orange_bot_charged.webp" alt="Orange bot" />
+                </div>
+
+                <div class="question" id="question-5">
+                    <img class="question__template" src="assets/images/Question_template.webp" alt="" aria-hidden="true" />
+                    <video class="question__avatar" src="assets/videos/bite_talking.mp4" muted loop autoplay playsinline preload="auto" aria-hidden="true"></video>
+                    <p class="question__text"
+                        data-text="Oh no! A few bots have overcharged."
+                        data-text2="Let us start fixing this bot."
+                        data-text3="Tap the bot to split its batteries."></p>
+                </div>
+
+            </section>
+
+            <!-- ===== SCREEN 6 - split the batteries (puzzle) ===== -->
+            <section class="screen screen--6" id="screen-6" data-screen="6">
+
+                <div class="s6-content" id="s6-content">
+                    <img class="panel" data-src="assets/images/panel_white.webp" alt="" aria-hidden="true" />
+                    <img class="panel panel--small-left" data-src="assets/images/panel_white.webp" alt="" aria-hidden="true" />
+                    <img class="panel panel--small-right" data-src="assets/images/panel_white.webp" alt="" aria-hidden="true" />
+                    <img class="panel panel--big" data-src="assets/images/panel_white.webp" alt="" aria-hidden="true" />
+
+                    <img class="slot-glow slot-glow--big" data-src="assets/images/Bigger_Slot_Red.svg" alt="" aria-hidden="true" />
+
+                    <div class="slot slot--big" data-slot="big" aria-hidden="true"></div>
+                    <div class="slot slot--small-left" data-slot="small-left" aria-hidden="true"></div>
+                    <div class="slot slot--small-right" data-slot="small-right" aria-hidden="true"></div>
+
+                    <!-- Batteries injected by js/split.js (start in the big slot) -->
+                </div>
+
+                <div class="question" id="question-6">
+                    <img class="question__template" src="assets/images/Question_template.webp" alt="" aria-hidden="true" />
+                    <video class="question__avatar" src="assets/videos/bite_talking.mp4" muted loop autoplay playsinline preload="auto" aria-hidden="true"></video>
+                    <p class="question__text"
+                        data-text="Tap the bot to split its batteries."
+                        data-text2="Drag the batteries to the small slots."></p>
+                </div>
+
+            </section>
+
+            <!-- ===== SCREEN 7 - the fixed bot celebrates ===== -->
+            <section class="screen screen--7" id="screen-7" data-screen="7">
+                <img class="spotlight" src="assets/images/spotlight.svg" alt="" aria-hidden="true" />
+                <div class="charged-bot">
+                    <img data-src="assets/images/White_purple_bot_charged.webp" alt="The fixed bot" />
+                </div>
+            </section>
+
+            <!-- ===== SCREEN 8 - concept: a whole is made of 2 parts ===== -->
+            <section class="screen screen--8" id="screen-8" data-screen="8">
+
+                <div class="s6-content" id="s8-content">
+                    <img class="panel" data-src="assets/images/panel_white.webp" alt="" aria-hidden="true" />
+                    <img class="panel panel--small-left" data-src="assets/images/panel_white.webp" alt="" aria-hidden="true" />
+                    <img class="panel panel--small-right" data-src="assets/images/panel_white.webp" alt="" aria-hidden="true" />
+                    <img class="panel panel--big is-green" data-src="assets/images/panel_white.webp" alt="" aria-hidden="true" />
+                    <img class="slot-glow slot-glow--big is-green" data-src="assets/images/Bigger_Slot_Red.svg" alt="" aria-hidden="true" />
+                    <img class="slot-glow slot-glow--small-left" data-src="assets/images/Smaller_Slot.svg" alt="" aria-hidden="true" />
+                    <img class="slot-glow slot-glow--small-right" data-src="assets/images/Smaller_Slot.svg" alt="" aria-hidden="true" />
+                    <!-- Batteries injected by js/concept.js (screen 8 variant) -->
+                </div>
+
+                <div class="question" id="question-8">
+                    <img class="question__template" src="assets/images/Question_template.webp" alt="" aria-hidden="true" />
+                    <video class="question__avatar" src="assets/videos/bite_talking.mp4" muted loop autoplay playsinline preload="auto" aria-hidden="true"></video>
+                    <p class="question__text" data-text="This whole is made of these 2 parts."></p>
+                </div>
+
+            </section>
+
+            <!-- ===== "YOUR TURN" interstitial — Bite flies in, does a superhero
+                 landing, says the line (speech bubble), taps his wrist, and the
+                 next screen's bots slide in. Transparent WebM over the stage. ===== -->
+            <section class="screen screen--turn" id="screen-turn" data-screen="turn">
+                <!-- Full-screen OPAQUE composite (Bite keyed over the room bg, baked
+                     in). Opaque H.264 plays identically on every browser — the old
+                     transparent WebM showed green on iOS/Safari (no VP9-alpha support). -->
+                <video class="turn-video" id="turn-video"
+                    src="assets/videos/bite_turn.mp4"
+                    muted playsinline preload="auto"></video>
+                <div class="turn-bubble" id="turn-bubble" aria-hidden="true">
+                    <span class="turn-bubble__text">Now, it's your turn!</span>
+                </div>
+                <!-- The next screen's bots, slid in from the right after Bite's
+                     wrist tap. Populated per part by main.js. -->
+                <div class="turn-pull" id="turn-pull" aria-hidden="true">
+                    <div class="turn-bots" id="turn-bots"></div>
+                </div>
+            </section>
+
+            <!-- ===== LEVEL TRANSITION SCREEN (legacy card; the curtain
+                 overlay below is the actual transition) ===== -->
+            <section class="screen screen--transition" id="screen-transition" data-screen="transition">
+                <div class="transition-card">
+                    <h1 class="transition-title" id="transition-title">Level 1 Completed!</h1>
+                    <p class="transition-subtitle" id="transition-subtitle">Get ready for Level 2</p>
+                    <button class="play-btn play-btn--transition" id="next-level-btn" type="button">Start Level 2</button>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- ===== Theatre CURTAIN transition — sits OUTSIDE #stage so it
+             covers the WHOLE screen (including the letterbox bars) ===== -->
+        <div class="curtains" id="curtains" aria-hidden="true">
+            <div class="curtain curtain--left"></div>
+            <div class="curtain curtain--right"></div>
+            <div class="curtain-text">
+                <h1 class="curtain-title" id="curtain-title"></h1>
+                <p class="curtain-sub" id="curtain-sub"></p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <!-- Loaded first: makes timers pausable so the QA tool can freeze the game -->
+    <script src="js/qa-freeze.js" defer></script>
+    <script src="js/audio.js" defer></script>
+    <script src="js/navigation.js" defer></script>
+    <script src="js/concept.js" defer></script>
+    <script src="js/part2.js" defer></script>
+    <script src="js/intro.js" defer></script>
+    <script src="js/batteries.js" defer></script>
+    <script src="js/main.js" defer></script>
+    <script src="js/carousel.js" defer></script>
+    <!-- TEMPORARY dev tool — remove this line and js/devmenu.js for production -->
+    <script src="js/devmenu.js" defer></script>
+    <!-- QA comment tool (activates only with ?qa=true) -->
+    <script type="module" src="qa/qa-mode.js"></script>
+</body>
+</html>

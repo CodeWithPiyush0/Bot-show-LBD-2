@@ -1,0 +1,62 @@
+/* ===========================================================
+   screen3.css
+   Screen 3 — the bot celebrates being fully charged.
+   Same room background as Screen 1; the charged bot stands in
+   the spotlight and does a gentle "dance" loop (placeholder until
+   a dancing video replaces the static image).
+   =========================================================== */
+
+.screen--3 {
+    background-image: var(--bg-image);
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+}
+
+/* Charged bot, centered on the floor under the spotlight */
+.charged-bot {
+    position: absolute;
+    left: 50%;
+    bottom: 5%;
+    width: 23%;
+    transform: translateX(-50%);
+    z-index: 5;
+}
+
+.charged-bot img {
+    display: block;
+    width: 100%;
+    height: auto;
+    transform-origin: bottom center;
+}
+
+/* Gentle celebratory dance (placeholder for the video) */
+.screen--3.is-active .charged-bot img {
+    animation: botDance 1.25s ease-in-out infinite;
+}
+
+/* Banner opens/closes (class-driven, like the other screens). Starts closed
+   (mascot only); "The bot is fully charged." types in while the bot dances. */
+.screen--3 .question__template {
+    clip-path: inset(0 100% 0 0); /* closed: rolled shut to the badge */
+    transition: clip-path 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.screen--3 .question.is-open .question__template {
+    clip-path: inset(0 0 0 0);
+}
+
+@keyframes botDance {
+    0%,
+    100% {
+        transform: translateY(0) rotate(0deg);
+    }
+    25% {
+        transform: translateY(-3%) rotate(-3deg);
+    }
+    50% {
+        transform: translateY(0) rotate(0deg);
+    }
+    75% {
+        transform: translateY(-3%) rotate(3deg);
+    }
+}

@@ -1,0 +1,583 @@
+/* ===========================================================
+   main.css
+   Core layout & the game background screen
+   =========================================================== */
+
+:root {
+    /* Reference design frame (Figma): 1920 x 1080 (16:9) */
+    --design-width: 1920;
+    --design-height: 1080;
+
+    /* Background asset */
+    --bg-image: url("../assets/images/BG.webp");
+
+    /* Letterbox fill — sampled from the BG.png left/right edges */
+    --letterbox-color: #5a3624;
+}
+
+/* Outer wrapper fills the viewport and centers the 16:9 stage.
+   Any space left/right (or top/bottom) is filled with the
+   background's edge color instead of black. */
+.game {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh; /* respects mobile browser chrome where supported */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--letterbox-color);
+    overflow: hidden;
+}
+
+/* The game stage: a fixed 16:9 box scaled to the largest size
+   that fits the viewport. All game elements live inside it and
+   are positioned relative to the 1920 x 1080 design frame. */
+.game__screen {
+    position: relative;
+    aspect-ratio: var(--design-width) / var(--design-height);
+
+    /* Largest 16:9 box that fits the viewport:
+       limited by width on tall screens, by height on wide screens. */
+    width: min(100vw, calc(100dvh * var(--design-width) / var(--design-height)));
+    max-height: 100dvh;
+    overflow: hidden;
+
+    /* Make this the sizing container so child elements can scale with
+       the stage using container-query units (cqw/cqh) — keeps the whole
+       screen responsive as a single unit. */
+    container-type: size;
+    container-name: stage;
+}
+
+/* While the QA comment tool is open (it adds `qa-intercept-on` to <body>),
+   freeze the on-stage animation so the reviewer can comment on a still frame.
+   Scoped to the stage so the QA UI (appended to <body>) keeps animating. */
+body.qa-intercept-on #stage,
+body.qa-intercept-on #stage *,
+body.qa-intercept-on #stage *::before,
+body.qa-intercept-on #stage *::after {
+    animation-play-state: paused !important;
+    transition: none !important;
+}
+
+/* ---------- Screens ----------
+   Each screen fills the stage and is stacked. Only the active one
+   is visible; switching fades between them.
+   Inactive screens stay painted (opacity 0, not visibility:hidden)
+   so they are already rasterized before a transition — this avoids
+   a paint stall the moment a screen is shown. */
+.screen {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+    backface-visibility: hidden;
+}
+
+.screen.is-active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Per-screen backgrounds */
+.screen--1 {
+    background-image: var(--bg-image);
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+}
+
+.screen--2 {
+    /* Fixed background tint outside the panel — same cream for every bot/level. */
+    background: #fbe7cb;
+}
+
+/* ---------- Theatre curtain transition (level changes) ----------
+   Two velvet curtain halves slide in to cover the stage, the level
+   message shows, then they part to reveal the next level. */
+.curtains {
+    position: fixed; /* cover the WHOLE viewport, including the letterbox bars */
+    inset: 0;
+    z-index: 60; /* above screens, below the dev menu / QA tool */
+    pointer-events: none;
+    visibility: hidden;
+    overflow: hidden;
+}
+.curtains.is-active {
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.curtain {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 52%;
+    will-change: transform;
+    transition: transform 0.85s cubic-bezier(0.7, 0, 0.3, 1);
+    /* velvet folds */
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 7%),
+        repeating-linear-gradient(
+            90deg,
+            #270c43 0,
+            #4a2073 26px,
+            #5e2c8a 40px,
+            #4a2073 54px,
+            #270c43 80px
+        );
+    box-shadow: inset 0 -3cqw 5cqw rgba(0, 0, 0, 0.45);
+}
+.curtain--left {
+    left: 0;
+    transform: translateX(-101%);
+    border-right: 0.45cqw solid #d9a23a; /* gold trim */
+}
+.curtain--right {
+    right: 0;
+    transform: translateX(101%);
+    border-left: 0.45cqw solid #d9a23a;
+}
+.curtains.is-closed .curtain--left,
+.curtains.is-closed .curtain--right {
+    transform: translateX(0);
+}
+
+.curtain-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 6%;
+    opacity: 0;
+    transform: translateY(1.2cqw);
+    transition: opacity 0.4s ease 0.4s, transform 0.4s ease 0.4s;
+}
+.curtains.is-closed .curtain-text {
+    opacity: 1;
+    transform: translateY(0);
+}
+.curtain-title {
+    margin: 0;
+    font-family: "Rajdhani", sans-serif;
+    font-weight: 700;
+    font-size: 5.5cqw;
+    color: #ffd24d;
+    letter-spacing: 0.02em;
+    text-shadow: 0 0.3cqw 0.5cqw rgba(0, 0, 0, 0.55);
+}
+.curtain-sub {
+    margin: 0.7cqw 0 0;
+    font-family: "Rajdhani", sans-serif;
+    font-weight: 500;
+    font-size: 2.6cqw;
+    color: #fff;
+    text-shadow: 0 0.2cqw 0.35cqw rgba(0, 0, 0, 0.55);
+}
+
+/* ---------- Pre-LBD start screen ---------- */
+.screen--pre {
+    background-image: url("../assets/images/Pre_LBD.webp");
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+}
+
+/* "Let's Play" button on the floor area */
+.play-btn {
+    position: absolute;
+    left: 50%;
+    bottom: 8%;
+    transform: translateX(-50%);
+    font-family: "Rajdhani", sans-serif;
+    font-weight: 700;
+    font-size: 3cqw;
+    letter-spacing: 0.04em;
+    color: #fff;
+    padding: 0.9cqw 4cqw;
+    border: 0.28cqw solid #ffffff;
+    border-radius: 3cqw;
+    background: linear-gradient(#ffc24d, #ff8a00);
+    box-shadow: 0 0.6cqw 0 #c96a00, 0 1cqw 1.6cqw rgba(0, 0, 0, 0.45);
+    cursor: pointer;
+    text-shadow: 0 0.15cqw 0.2cqw rgba(0, 0, 0, 0.3);
+    animation: playPulse 1.3s ease-in-out infinite;
+    transition: transform 0.2s ease, filter 0.2s ease;
+}
+.play-btn:hover {
+    filter: brightness(1.06);
+}
+.play-btn:active {
+    box-shadow: 0 0.2cqw 0 #c96a00, 0 0.4cqw 0.8cqw rgba(0, 0, 0, 0.45);
+}
+
+@keyframes playPulse {
+    0%,
+    100% {
+        transform: translateX(-50%) scale(1);
+    }
+    50% {
+        transform: translateX(-50%) scale(1.06);
+    }
+}
+
+/* ---------- Pre-LBD play button (the play_btn2.webp image) ---------- */
+.play-btn--icon {
+    position: absolute;
+    left: 50%;
+    bottom: 2%; /* lowered so it clears the battery icon in the background */
+    transform: translateX(-50%);
+    width: 17cqw;
+    height: auto;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    z-index: 2;
+    animation: playBob 1.3s ease-in-out infinite;
+    transition: filter 0.15s ease;
+    filter: drop-shadow(0 0.9cqw 1.1cqw rgba(0, 0, 0, 0.4));
+}
+.play-btn--icon img {
+    display: block;
+    width: 100%;
+    height: auto;
+    pointer-events: none;
+    -webkit-user-drag: none;
+}
+.play-btn--icon:hover {
+    filter: brightness(1.06) drop-shadow(0 0.9cqw 1.1cqw rgba(0, 0, 0, 0.4));
+}
+.play-btn--icon:active {
+    transform: translateX(-50%) scale(0.95);
+}
+@keyframes playBob {
+    0%, 100% { transform: translateX(-50%) scale(1) translateY(0); }
+    50% { transform: translateX(-50%) scale(1.04) translateY(-0.7cqw); }
+}
+
+/* ---------- "Your turn" interstitial ----------
+   After a tutorial's dance: textless curtain → this → the levels.
+   Bite (the mascot) walks in on the stage background, says the line in a
+   speech bubble, then pulls a rope that drags the chooser screen in.
+   The clip is a transparent WebM (chroma-keyed) over the room bg. */
+.screen--turn {
+    background-image: var(--bg-image);
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+    overflow: hidden;
+}
+.turn-video {
+    position: absolute;
+    /* Full-screen OPAQUE composite: the room bg + Bite (at the same ~72% size,
+       bottom-left) are baked into the clip, so no transparency is needed — it
+       plays identically on mobile/tablet/desktop. (The transparent WebM showed
+       green on iOS, which has no VP9-alpha support.) 16:9 clip on a 16:9 stage. */
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+}
+/* Glossy comic speech bubble above Bite's head while it talks (Bite lands at
+   ~36% of the stage width, head top ~38% down). Sticker look: white candy
+   body, chunky golden ring, 3D bottom edge, top gloss, and a bordered tail. */
+/* Speech bubble = the Speech_bubble.webp art (glossy blue bubble + sparkles +
+   tail). Sits HIGH above Bite (not crowding his head); the line is centred in
+   the bubble body (above the tail). Both bubble and text get an idle animation. */
+.turn-bubble {
+    position: absolute;
+    left: 44%;
+    top: 3%;
+    transform: translateX(-50%) scale(0.6);
+    width: 39cqw;
+    aspect-ratio: 1423 / 604;
+    background: url("../assets/images/Speech_bubble.webp") no-repeat center / 100% 100%;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 3;
+}
+/* The line, centred BOTH axes in the bubble BODY (the tail is below, so the
+   body centre is ~43% down, not 50%). Typed in via a typewriter reveal. */
+.turn-bubble__text {
+    position: absolute;
+    left: 50%;
+    top: 43%;
+    transform: translate(-50%, -50%);
+    color: #2f7ed4; /* blue, matching the bubble outline */
+    font-weight: 800;
+    font-size: 3.5cqw;
+    line-height: 1.1;
+    text-align: center;
+    white-space: nowrap;
+    clip-path: inset(0 100% 0 0); /* hidden until the typewriter reveals it */
+}
+/* Bubble: pop in, then a gentle idle float/tilt. */
+.turn-bubble.is-shown {
+    animation:
+        bubblePop 0.5s cubic-bezier(0.34, 1.7, 0.5, 1) both,
+        bubbleFloat 2.6s ease-in-out 0.55s infinite;
+}
+.turn-bubble.is-hidden {
+    animation: bubbleHide 0.3s ease forwards;
+}
+/* Text: TYPEWRITER — reveal left→right in character-width steps, after the
+   bubble has popped in. ("Now, it's your turn!" = 20 chars → steps(20).) */
+.turn-bubble.is-shown .turn-bubble__text {
+    animation: turnTypewriter 1.4s steps(20, end) 0.5s both;
+}
+@keyframes bubblePop {
+    0% { opacity: 0; transform: translateX(-50%) scale(0.3) rotate(-6deg); }
+    70% { opacity: 1; transform: translateX(-50%) scale(1.06) rotate(1.5deg); }
+    100% { opacity: 1; transform: translateX(-50%) scale(1) rotate(0deg); }
+}
+@keyframes bubbleFloat {
+    0%, 100% { transform: translateX(-50%) translateY(0) scale(1) rotate(0deg); }
+    50% { transform: translateX(-50%) translateY(-1cqw) scale(1.015) rotate(-1.2deg); }
+}
+@keyframes bubbleHide {
+    0% { opacity: 1; transform: translateX(-50%) scale(1); }
+    100% { opacity: 0; transform: translateX(-50%) scale(0.6); }
+}
+@keyframes turnTypewriter {
+    from { clip-path: inset(0 100% 0 0); }
+    to { clip-path: inset(0 0 0 0); }
+}
+
+/* Bots entrance: after Bite taps his wrist (~clip 6.5s), the next screen's
+   bots slide IN from the right along the floor (no rope — this clip has none).
+   They settle centred, then a gentle opacity crossfade (default GameNav.show)
+   hands off to the live chooser, which shows the same bots. */
+.turn-pull {
+    position: absolute;
+    inset: 0;
+    z-index: 2; /* above the clip */
+    transform: translateX(125%); /* parked off the right edge */
+    pointer-events: none;
+}
+.screen--turn.is-pulling .turn-pull {
+    transform: translateX(0); /* slid into centre */
+    /* slow + gentle: the bots ease in gradually as Bite walks out, so they
+       never rush in or overlap him */
+    transition: transform 3.4s cubic-bezier(0.25, 0.5, 0.3, 1);
+}
+.turn-bots {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 8%; /* feet on the floor (matches the carousel bots) */
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 4cqw;
+}
+.turn-bots img {
+    height: 40cqh;
+    width: auto;
+    filter: drop-shadow(0 1cqh 0.7cqw rgba(0, 0, 0, 0.35)); /* floor shadow */
+}
+/* outer bots a touch smaller for a little depth */
+.turn-bots img:first-child,
+.turn-bots img:last-child {
+    height: 34cqh;
+}
+
+/* Hand-off from the "your turn" clip — ELEMENT-WISE merge: the turn screen (room
+   + Bite walking out) stays as the backdrop; Screen 1 sits ON TOP but TRANSPARENT,
+   and only its foreground elements (the question banner + the bot carousel & its
+   arrows) slide IN from the right. Because the room is baked into the turn clip and
+   is identical on Screen 1, the background never moves — the two screens merge
+   smoothly. After the elements settle, GameNav makes Screen 1 the active screen. */
+.screen--1.is-elements-in {
+    background: none;       /* transparent → the turn screen (room + Bite) shows through */
+    opacity: 1;
+    pointer-events: none;
+    z-index: 10;
+}
+.screen--1.is-elements-in .question,
+.screen--1.is-elements-in .bot-carousel {
+    /* SLOW + gentle so the elements ease in gradually as Bite walks OUT to the
+       left — they enter from the right and trail behind him, so they never
+       overlap/cover his exit (he's gone before they reach centre). */
+    animation: elemSlideIn 3.4s cubic-bezier(0.25, 0.5, 0.3, 1) both;
+}
+.screen--1.is-elements-in .bot-carousel { animation-delay: 0.25s; } /* slight stagger */
+@keyframes elemSlideIn {
+    from { transform: translateX(125%); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+}
+
+/* ---------- Level Transition Screen ---------- */
+.screen--transition {
+    background: radial-gradient(ellipse at 50% 42%, #140526 0%, #05010a 82%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+.transition-card {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.04);
+    border: 0.2cqw solid rgba(255, 255, 255, 0.08);
+    border-radius: 2.5cqw;
+    padding: 4cqw 6cqw;
+    backdrop-filter: blur(15px);
+    box-shadow: 0 2cqw 4cqw rgba(0, 0, 0, 0.6);
+    width: 60cqw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2cqw;
+    animation: cardEntrance 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes cardEntrance {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(4%);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.transition-title {
+    font-family: "Rajdhani", sans-serif;
+    font-weight: 700;
+    font-size: 5cqw;
+    color: #e09cff;
+    text-shadow: 0 0 2cqw rgba(224, 156, 255, 0.6);
+    margin: 0;
+}
+
+.transition-subtitle {
+    font-family: "Rajdhani", sans-serif;
+    font-weight: 500;
+    font-size: 2.5cqw;
+    color: #ffffff;
+    opacity: 0.9;
+    margin: 0 0 1cqw 0;
+}
+
+.play-btn--transition {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    transform: none;
+    animation: transitionPulse 1.3s ease-in-out infinite;
+    background: linear-gradient(#d875ff, #8a14db);
+    box-shadow: 0 0.6cqw 0 #61099e, 0 1cqw 1.6cqw rgba(0, 0, 0, 0.45);
+}
+.play-btn--transition:active {
+    box-shadow: 0 0.2cqw 0 #61099e, 0 0.4cqw 0.8cqw rgba(0, 0, 0, 0.45);
+}
+
+@keyframes transitionPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+/* ---------- Transition: zoom into the orange bot's chest ----------
+   Both screens zoom about the SAME point (the chest battery icon).
+   Screen 2 begins at the exact scale Screen 1 has reached at the
+   hand-off (~2x), so the crossfade is seamless: the camera keeps
+   flying in while the bot dissolves into the interior, which then
+   settles to rest. Only transform/opacity animate (GPU-composited,
+   no blur, modest scale) so there is no rasterization hitch. */
+.screen--1.is-zooming {
+    transform-origin: 49.6% 73%; /* the chest battery icon */
+    animation: zoomIntoBot 0.75s cubic-bezier(0.42, 0, 1, 1) forwards;
+    pointer-events: none;
+    will-change: transform, opacity;
+}
+
+@keyframes zoomIntoBot {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    60% {
+        opacity: 1;
+    }
+    100% {
+        transform: scale(4.2);
+        opacity: 0;
+    }
+}
+
+.screen--2.is-entering {
+    transform-origin: 49.6% 73%; /* same focal point as the zoom */
+    animation: enterInsideBot 0.72s cubic-bezier(0, 0, 0.2, 1);
+    will-change: transform, opacity;
+}
+
+@keyframes enterInsideBot {
+    0% {
+        transform: scale(2);
+        opacity: 0;
+    }
+    40% {
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* ---------- Transition: zoom OUT of the bot (Screen 2 -> 3) ----------
+   The reverse of the zoom-in. We pull back from the chest: the interior
+   recedes and the whole charged bot is revealed, shrinking from a
+   chest-close-up to its normal size. Same chest focal point. */
+.screen--2.is-zooming-out,
+.screen--4.is-zooming-out { /* concept (Screen 4) reveals the dancing bot */
+    transform-origin: 49.6% 73%; /* the chest */
+    animation: zoomOutOfBot 0.55s cubic-bezier(0.42, 0, 1, 1) forwards;
+    pointer-events: none;
+    will-change: transform, opacity;
+}
+
+@keyframes zoomOutOfBot {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.6);
+        opacity: 0;
+    }
+}
+
+.screen--3.is-revealing {
+    transform-origin: 49.6% 73%; /* same focal point */
+    animation: revealBot 0.8s cubic-bezier(0, 0, 0.2, 1);
+    will-change: transform, opacity;
+}
+
+@keyframes revealBot {
+    0% {
+        transform: scale(4.2);
+        opacity: 0;
+    }
+    35% {
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}

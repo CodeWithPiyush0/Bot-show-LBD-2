@@ -1,0 +1,66 @@
+/* ===========================================================
+   screen4.css
+   Screen 4 — the concept screen: "These 2 parts make this whole."
+   The two small slots (the parts) and the big slot (the whole) are
+   all filled with batteries. A scripted animation (js/concept.js)
+   highlights the parts, then the whole.
+   =========================================================== */
+
+.screen--4 {
+    /* same scheme tint as Screen 2 (orange L1; purple L2 via main.css) */
+    background: #fbe7cb;
+}
+
+.s4-content {
+    position: absolute;
+    inset: 0;
+    /* nudge the whole board down so it clears the banner and the full
+       panel is visible */
+    transform: translateY(14%);
+}
+
+/* Banner open/close (same as Screen 2, scoped to Screen 4) */
+.screen--4 .question__template {
+    clip-path: inset(0 100% 0 0); /* closed: rolled shut to the badge */
+    transition: clip-path 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.screen--4 .question.is-open .question__template {
+    clip-path: inset(0 0 0 0); /* open */
+}
+
+/* Battery opacity states (scoped so Screen 2 is unaffected).
+   Batteries don't glow — the SLOTS glow instead (below). */
+.screen--4 .battery {
+    transition: opacity 0.4s ease;
+}
+
+.screen--4 .battery.is-dim {
+    opacity: 0.2;
+}
+
+/* Small (part) slot glow overlays — same green-glow treatment as the
+   big slot, hugging the small slot shapes. */
+.slot-glow--small-left,
+.slot-glow--small-right {
+    position: absolute;
+    top: 50.5%; /* aligned to the new panel's small slots (~546/1080) */
+    width: 21.72%; /* 417 / 1920 */
+    height: auto;
+    z-index: 6;
+    pointer-events: none;
+    opacity: 0;
+    filter: drop-shadow(0 0 0.9cqw rgba(70, 255, 140, 0.95))
+        drop-shadow(0 0 2cqw rgba(70, 255, 140, 0.65));
+}
+.slot-glow--small-left {
+    left: 21.93%; /* 421 / 1920 */
+}
+.slot-glow--small-right {
+    left: 57.03%; /* 1095 / 1920 */
+    top: 50.46%;
+}
+
+/* Reuse the big-slot pulse for the small slots too */
+.screen--4 .slot-glow.is-charged {
+    animation: slotGlowPulse 1.3s ease-in-out infinite alternate;
+}

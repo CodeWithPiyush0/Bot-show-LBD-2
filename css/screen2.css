@@ -1,0 +1,397 @@
+/* ===========================================================
+   screen2.css
+   Screen 2 — inside the bot: the circuit-board panel with slots,
+   the two battery trays, and the draggable batteries.
+   Coordinates are 1:1 from Figma "Screen 2" (1920 x 1080 stage).
+   Lengths that must scale (borders, radii, gaps) use cqw
+   (1cqw = 1% of the stage width = 19.2px at design size).
+   =========================================================== */
+
+/* ---------- Circuit-board panel ----------
+   Figma "Main container": x=43 y=40 w=1834.36 h=786 */
+.panel {
+    position: absolute;
+    left: 2.240%;
+    top: 3.704%;
+    width: 95.539%;
+    height: auto;
+    z-index: 1;
+    transition: filter 0.4s ease;
+}
+
+/* The board colour now comes from the per-bot panel image (panel_<scheme>.webp),
+   not a hue-rotate. Charge success is signalled by the green slot-glow + green
+   current flow below, so the board itself keeps its bot colour. */
+
+.panel--small-left {
+    clip-path: inset(65% 56% 13% 19.5%);
+    z-index: 5;
+}
+
+.panel--small-right {
+    clip-path: inset(65% 19% 13% 56.5%);
+    z-index: 5;
+}
+
+.panel--big {
+    clip-path: inset(10% 34% 52% 35%);
+    z-index: 5;
+    transition: filter 0.4s ease;
+}
+
+/* ---------- Slot drop-zones ----------
+   Invisible targets over the panel's slot recesses. */
+.slot {
+    position: absolute;
+    z-index: 3;
+    border-radius: 1.2cqw;
+    transition: box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+/* Big slot — Figma 163:223: x=698 y=126 w=535.5 h=284.5 */
+.slot--big {
+    left: 36.354%;
+    top: 11.667%;
+    width: 27.891%;
+    height: 26.343%;
+    border-radius: 1.77cqw;
+}
+
+
+
+/* Small left — Figma 163:341: x=411 y=556 w=431 h=163 */
+.slot--small-left {
+    left: 21.406%;
+    top: 51.481%;
+    width: 22.448%;
+    height: 15.093%;
+}
+
+/* Small right — Figma 163:282: x=1091 y=555 w=431 h=163 */
+.slot--small-right {
+    left: 56.823%;
+    top: 51.389%;
+    width: 22.448%;
+    height: 15.093%;
+}
+
+/* Highlight a slot while a battery is dragged over it */
+.slot.is-hover {
+    background-color: rgba(255, 168, 64, 0.12);
+    box-shadow: inset 0 0 0 0.2cqw rgba(255, 168, 64, 0.8),
+        0 0 1.5cqw rgba(255, 168, 64, 0.5);
+}
+
+/* Top slot charged glow.
+   Overlays the standalone slot art (matches the panel's big slot)
+   and casts a green drop-shadow that follows the slot's exact
+   rounded shape. The glow pulses by fading the overlay's opacity,
+   so the underlying orange slot stays put (smooth, no box-shadow). */
+.slot-glow--big {
+    position: absolute;
+    left: 36.354%; /* 698 / 1920 */
+    top: 11.667%; /* 126 / 1080 */
+    width: 27.891%; /* 535.5 / 1920 */
+    height: auto;
+    z-index: 6; /* above the panel/slots, below the batteries */
+    pointer-events: none;
+    opacity: 0;
+    filter: drop-shadow(0 0 0.9cqw rgba(70, 255, 140, 0.95))
+        drop-shadow(0 0 2cqw rgba(70, 255, 140, 0.65));
+}
+
+.slot-glow--big.is-charged {
+    animation: slotGlowPulse 1.3s ease-in-out infinite alternate;
+}
+
+@keyframes slotGlowPulse {
+    from {
+        opacity: 0.45;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Rejection: batteries dropped on the BIG slot (not a drop target in Part 1).
+   The slot flashes red and shakes "no" while the group bounces back home.
+   (JS swaps the art to Bigger_Slot_Red.svg for the duration.) */
+.slot-glow--big.is-rejected {
+    opacity: 1;
+    filter: drop-shadow(0 0 0.9cqw rgba(255, 60, 40, 0.95))
+        drop-shadow(0 0 2cqw rgba(255, 60, 40, 0.6));
+    animation: slotReject 0.5s ease-in-out;
+}
+
+@keyframes slotReject {
+    0%, 100% { transform: translateX(0); }
+    15% { transform: translateX(-1cqw); }
+    30% { transform: translateX(0.9cqw); }
+    45% { transform: translateX(-0.7cqw); }
+    60% { transform: translateX(0.5cqw); }
+    75% { transform: translateX(-0.3cqw); }
+}
+
+/* ---------- Current-flow animation ----------
+   SVG overlay in the 1920 x 1080 design space. The paths trace the
+   exact orange connector centerlines, so the current runs THROUGH
+   the connectors and the green glow hugs their exact bends. */
+.charge-fx {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 4;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.charge-fx.is-active {
+    opacity: 1;
+}
+
+/* Travelling current pulses inside the orange connectors */
+.charge-flow {
+    filter: drop-shadow(0 0 5px #ffd36b);
+}
+.charge-flow path {
+    fill: none;
+    stroke: #fff3c0;
+    stroke-width: 13;
+    stroke-linecap: round;
+    stroke-dasharray: 26 72;
+    animation: chargeFlow 0.7s linear infinite;
+}
+
+@keyframes chargeFlow {
+    to {
+        stroke-dashoffset: -98;
+    }
+}
+
+/* Steady green glow that hugs the connectors once charged */
+.charge-glow {
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+.charge-glow path {
+    fill: none;
+    stroke: rgba(80, 255, 150, 0.55);
+    stroke-width: 20;
+    stroke-linecap: round;
+}
+
+.charge-fx.is-green .charge-glow {
+    opacity: 1;
+    filter: drop-shadow(0 0 9px #4dffa0);
+}
+.charge-fx.is-green .charge-flow {
+    filter: drop-shadow(0 0 5px #6dffa6);
+}
+.charge-fx.is-green .charge-flow path {
+    stroke: #e6fff0;
+}
+
+/* ---------- Battery trays ----------
+   Figma "Batteries_tray": x=181 y=860; each tray 651.05 x 177.05.
+   Recreated from the Figma vector (nested rounded rects + accent
+   border + decorator tabs). */
+.tray {
+    position: absolute;
+    top: 79.630%; /* 860 / 1080 */
+    width: 33.909%; /* 651.05 / 1920 */
+    height: 16.394%; /* 177.05 / 1080 */
+    box-sizing: border-box;
+
+    border: 0.4375cqw solid #5f5e5e; /* 8.4px metallic rim */
+    border-radius: 1.823cqw; /* 35px */
+    background: radial-gradient(
+        ellipse at 50% 50%,
+        var(--g1) 0%,
+        var(--g2) 52%,
+        var(--g3) 100%
+    );
+    box-shadow: inset 0 0.3cqw 0.6cqw rgba(0, 0, 0, 0.55);
+}
+
+.tray__inner {
+    position: absolute;
+    inset: 0.625cqw; /* 12px */
+    box-sizing: border-box;
+    border: 0.146cqw solid var(--accent); /* 2.8px accent line */
+    border-radius: 1.313cqw; /* 25.2px */
+    pointer-events: none;
+}
+
+.tray--blue {
+    left: 9.427%; /* 181 / 1920 */
+    --accent: #96f2f7;
+    --g1: #142d5e;
+    --g2: #0b1d42;
+    --g3: #020e25;
+    --dot: #3aa6e8;
+}
+
+.tray--yellow {
+    left: 56.664%; /* (181 + 906.95) / 1920 */
+    --accent: #f3e21f;
+    --g1: #6a5a17;
+    --g2: #51430b;
+    --g3: #241c05;
+    --dot: #e8c21f;
+}
+
+/* Decorator tabs (metallic, with 3 accent dots) */
+.tray__deco {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45cqw;
+    background: linear-gradient(#787878, #4a4a4a);
+    border-radius: 0.45cqw;
+    z-index: 2;
+}
+
+.tray__deco i {
+    display: block;
+    width: 0.42cqw;
+    height: 0.42cqw;
+    border-radius: 50%;
+    background: var(--dot);
+}
+
+/* Top / bottom horizontal tabs: 99.575 x 15.05, centered on x=276 */
+.tray__deco--top,
+.tray__deco--bottom {
+    left: 42.4%;
+    width: 15.3%;
+    height: 8.5%;
+}
+.tray__deco--top {
+    top: -2.4%;
+}
+.tray__deco--bottom {
+    bottom: -2.4%;
+}
+
+/* Left / right vertical tabs: 15.05 x 74.9, centered vertically */
+.tray__deco--left,
+.tray__deco--right {
+    flex-direction: column;
+    top: 28.8%;
+    width: 2.31%;
+    height: 42.3%;
+}
+.tray__deco--left {
+    left: -1.15%;
+}
+.tray__deco--right {
+    right: -1.15%;
+}
+
+/* ---------- Battery groups (draggable as a whole) ----------
+   Each colour is ONE draggable group. It is positioned by its
+   centre (left/top = centre point) and scaled to fit a slot when
+   dropped, so a 6-battery group never overflows. */
+.battery-group {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625cqw; /* 12px design gap */
+    transform: translate(-50%, -50%) scale(1);
+    transform-origin: center center;
+    z-index: 10;
+    cursor: grab;
+    touch-action: none; /* JS owns the gesture (mouse + touch) */
+    user-select: none;
+    filter: drop-shadow(0 0.4cqw 0.5cqw rgba(0, 0, 0, 0.5));
+    transition: left 0.25s ease, top 0.25s ease, transform 0.25s ease;
+}
+
+.battery-group.is-dragging {
+    z-index: 100;
+    cursor: grabbing;
+    transition: none; /* follow the pointer 1:1 while dragging */
+}
+
+/* Single battery image inside a group */
+.battery {
+    width: 3.229cqw; /* 62 / 1920 of the stage width */
+    height: auto;
+    display: block;
+    pointer-events: none; /* the group receives the pointer events */
+    -webkit-user-drag: none;
+}
+
+/* Ghost group used for the drag hint */
+.battery-group.is-ghost {
+    pointer-events: none;
+    z-index: 90;
+    opacity: 0;
+    filter: drop-shadow(0 0 0.6cqw rgba(120, 200, 255, 0.7));
+}
+
+/* ---------- Gameplay content wrapper ----------
+   Holds the panel, slots, connectors and trays. Scaled down a touch
+   while the question banner is open, then grows back to normal. */
+.s2-content {
+    position: absolute;
+    inset: 0;
+    transform-origin: 50% 50%;
+    transition: transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* While the banner is open: shrink a touch AND shift down, so the
+   panel clears the banner with a gap above it. */
+.s2-content.is-compact {
+    transform: translateY(10%) scale(0.85);
+}
+
+/* Finale (bot fully charged): the trays are gone, so the board slides
+   down to fill the bottom. EXACTLY 14% to match `.s4-content`'s offset —
+   any mismatch shows as a vertical jump when Screen 4 swaps in. */
+.s2-content.is-charged-final {
+    transform: translateY(14%);
+}
+
+/* ---------- Question banner (Screen 2) ----------
+   Reuses the cream template. Starts closed (mascot only); JS toggles
+   `.is-open` to unroll it and types the prompt, then closes it. */
+.screen--2 .question__template {
+    clip-path: inset(0 100% 0 0); /* closed: rolled shut to the badge */
+    transition: clip-path 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.screen--2 .question.is-open .question__template {
+    clip-path: inset(0 0 0 0); /* open: rolled fully open */
+}
+
+/* ===========================================================
+   Level 2 Interior Overrides (Purple Theme)
+   =========================================================== */
+
+/* Hue rotate panels to purple (240deg maps orange to purple) */
+/* (L2's purple board now comes from panel_purple.webp — no hue-rotate needed.) */
+
+/* Purple flow pulses and wire glow */
+.level-2 .charge-flow {
+    filter: drop-shadow(0 0 5px #d28cff);
+}
+.level-2 .charge-flow path {
+    stroke: #f5e6ff;
+}
+
+/* Keep success green glow and flows overriding purple */
+.level-2 .charge-fx.is-green .charge-glow {
+    opacity: 1;
+    filter: drop-shadow(0 0 9px #4dffa0) !important;
+}
+.level-2 .charge-fx.is-green .charge-flow {
+    filter: drop-shadow(0 0 5px #6dffa6) !important;
+}
+.level-2 .charge-fx.is-green .charge-flow path {
+    stroke: #e6fff0 !important;
+}
+
