@@ -345,7 +345,7 @@
             return null;
         }
         function clearHover() {
-            DROPPABLE.forEach(function (id) { if (slotEls[id]) slotEls[id].classList.remove("is-hover"); });
+            DROPPABLE.forEach(function (id) { if (socketEls[id]) socketEls[id].classList.remove("is-hover"); });
         }
 
         /* ---- wrong drop: bounce home + flash the slot red ---- */
@@ -353,14 +353,14 @@
         function clearReject() {
             DROPPABLE.forEach(function (id) {
                 if (rejectTimers[id]) { global.clearTimeout(rejectTimers[id]); rejectTimers[id] = null; }
-                if (slotEls[id]) slotEls[id].classList.remove("is-reject");
+                if (socketEls[id]) socketEls[id].classList.remove("is-reject");
             });
         }
         function rejectSlot(id, tile) {
             sendHome(tile);
             if (solved) return;
             if (global.SFX) global.SFX.play("reject");
-            const el = slotEls[id];
+            const el = socketEls[id]; // glow + shake the visible slot
             if (el) { el.classList.remove("is-reject"); void el.offsetWidth; el.classList.add("is-reject"); }
             if (rejectTimers[id]) global.clearTimeout(rejectTimers[id]);
             rejectTimers[id] = global.setTimeout(function () {
@@ -397,7 +397,7 @@
                 tile.style.top = baseTopPct + ((e.clientY - startY) / stageRect.height) * 100 + "%";
                 clearHover();
                 const id = slotAtPoint(e.clientX, e.clientY);
-                if (id) slotEls[id].classList.add("is-hover");
+                if (id && socketEls[id]) socketEls[id].classList.add("is-hover");
             });
 
             function endDrag(e) {

@@ -77,19 +77,17 @@
 /* Highlight a slot while a code is dragged over it.
    z-index bumped above the panel slot-overlays (z5) + big glow (z6)
    so the ring is visible over the recess. */
-.slot.is-hover {
-    z-index: 7;
-    background-color: rgba(255, 168, 64, 0.12);
-    box-shadow: inset 0 0 0 0.2cqw rgba(255, 168, 64, 0.8),
-        0 0 1.5cqw rgba(255, 168, 64, 0.5);
+/* Dragging a code over a slot: a soft GLOW on the socket (no border).
+   drop-shadow hugs the slot's rounded shape. */
+.socket.is-hover {
+    filter: drop-shadow(0 0 0.7cqw rgba(255, 255, 255, 0.95))
+        drop-shadow(0 0 2.4cqw rgba(120, 225, 255, 0.9));
 }
 
-/* Wrong code dropped on a slot: flash red and shake "no". */
-.slot.is-reject {
-    z-index: 7;
-    background-color: rgba(255, 60, 40, 0.14);
-    box-shadow: inset 0 0 0 0.25cqw rgba(255, 60, 40, 0.9),
-        0 0 1.7cqw rgba(255, 60, 40, 0.55);
+/* Wrong code dropped: RED glow + shake (no border). */
+.socket.is-reject {
+    filter: drop-shadow(0 0 0.9cqw rgba(255, 70, 50, 1))
+        drop-shadow(0 0 2.6cqw rgba(255, 45, 30, 0.85));
     animation: slotReject 0.5s ease-in-out;
 }
 
