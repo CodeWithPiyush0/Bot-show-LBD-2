@@ -13,29 +13,50 @@
     //   2 = SPLIT  (Part 2): tutorial teaches splitting, then 4 split levels.
     window.gamePart = 1;
 
-    // ---- Per-stage battery counts ----------------------------------------
-    // 5 stages: Tutorial, then Levels 1-4. Each puzzle's "whole" splits into
-    // two parts — a = blue group, b = yellow group. Part 1 = charge (combine
-    // the parts into the whole), Part 2 = split (whole back into parts).
+    // ---- Per-stage puzzle config -----------------------------------------
+    // 5 stages: Tutorial, then Levels 1-4.
+    //   Part 1 (FIX with codes): `part1 = { whole, parts:[a, b] }`. The kid
+    //     sorts three number "codes" — the whole into the big slot, the two
+    //     parts into the two small slots. (a + b === whole.)
+    //   Part 2 (SPLIT batteries — not yet converted): `part2 = {blue, yellow}`
+    //     battery counts, still used by part2.js / getCounts(2).
     window.STAGES = [
-        { key: "tutorial", part1: { blue: 4, yellow: 2 }, part2: { blue: 3, yellow: 2 } },
-        { key: "level1", part1: { blue: 3, yellow: 5 }, part2: { blue: 4, yellow: 3 } },
-        { key: "level2", part1: { blue: 6, yellow: 3 }, part2: { blue: 7, yellow: 3 } },
-        { key: "level3", part1: { blue: 6, yellow: 4 }, part2: { blue: 5, yellow: 4 } },
-        { key: "level4", part1: { blue: 6, yellow: 6 }, part2: { blue: 6, yellow: 5 } },
+        { key: "tutorial", part1: { whole: 8,  parts: [5, 3]  }, part2: { blue: 3, yellow: 2 } },
+        { key: "level1",   part1: { whole: 12, parts: [6, 6]  }, part2: { blue: 4, yellow: 3 } },
+        { key: "level2",   part1: { whole: 20, parts: [9, 11] }, part2: { blue: 7, yellow: 3 } },
+        { key: "level3",   part1: { whole: 20, parts: [8, 12] }, part2: { blue: 5, yellow: 4 } },
+        { key: "level4",   part1: { whole: 15, parts: [8, 7]  }, part2: { blue: 6, yellow: 5 } },
     ];
     window.gameStage = 0; // index into STAGES (0 = Tutorial)
     window.getCounts = function (part) {
         const s = window.STAGES[window.gameStage] || window.STAGES[0];
         return part === 2 ? s.part2 : s.part1;
     };
+    // Part 1 codes for the current stage: { whole, parts:[a, b] }.
+    window.getCodes = function () {
+        const s = window.STAGES[window.gameStage] || window.STAGES[0];
+        return s.part1;
+    };
 
     // Each bot has its own interior-panel colour scheme (per the Figma):
     // orange / purple (Part 1 L1/L2) and white / blue (Part 2 L1/L2). The
     // filled colour boards are pre-rendered images (panel_<scheme>.webp), so we
     // just swap the src of every panel layer in the given screens.
+    // Flat board fill per scheme (sampled from each panel_<scheme>.webp). Used
+    // by the .slot-cover patch that hides the baked wide slots/connectors so
+    // the narrower CSS sockets can be drawn on top.
+    const BOARD_FILL = {
+        orange: "#ffcc99", gold: "#e9e292", blue: "#5985d4",
+        purple: "#cf9fe8", pink: "#fa89bd", white: "#ece7df",
+    };
+    // Per-bot slot art (slot_<scheme>.webp) + connector hue shift (recolours
+    // connector.webp's orange toward the bot's colour).
+    const CONN_HUE = { orange: 0, gold: 12, blue: 188, purple: 250, pink: 300 };
     function setPanelScheme(screenIds, scheme) {
         const src = "assets/images/panel_" + scheme + ".webp";
+        const fill = BOARD_FILL[scheme];
+        const hasSlot = CONN_HUE.hasOwnProperty(scheme);
+        const slotSrc = hasSlot ? "assets/images/slot_" + scheme + ".webp" : null;
         screenIds.forEach(function (id) {
             const root = document.getElementById(id);
             if (!root) return;
@@ -43,6 +64,14 @@
                 img.src = src;
                 img.removeAttribute("data-src");
             });
+            if (slotSrc) {
+                root.querySelectorAll("img.socket").forEach(function (img) {
+                    img.src = slotSrc;
+                    img.removeAttribute("data-src");
+                });
+            }
+            if (fill) root.style.setProperty("--board-fill", fill);
+            if (hasSlot) root.style.setProperty("--conn-hue", CONN_HUE[scheme] + "deg");
         });
     }
     window.setPanelScheme = setPanelScheme;

@@ -1,16 +1,23 @@
 /* ===========================================================
-   batteries.js
+   batteries.js  (Part 1 — FIX with codes)
    Screen 2 mechanic:
-   - Drag a whole battery GROUP (all blue / all yellow) into one
-     of the two BOTTOM slots.
-   - Batteries are a uniform size in every slot (PLACED_SCALE).
-   - When BOTH bottom slots are filled, a current animation flows
-     up to the top slot, both groups travel up into it, and the
-     top slot glows green.
+   - Three draggable number "codes" sit in the bottom dock:
+     the WHOLE and its two PARTS (parts[0] + parts[1] === whole).
+   - Drag each code into its correct slot:
+       * the WHOLE -> the big (top) slot
+       * each PART -> either small (bottom) slot
+   - A correct drop snaps the tile into the socket; a wrong drop
+     bounces the tile home and the slot flashes red ("no").
+   - When all three slots are filled, the connectors light up green
+     (the bot is fixed) and the finale plays.
 
    Geometry is in the 1920 x 1080 design space, mapped to % of the
    stage (which renders at real pixel size, so 1 viewport px ==
    1 stage px while dragging).
+
+   NOTE: the public global is still `window.Batteries` (init/setup/
+   setEnabled/playHint) so intro.js / main.js need no changes.
+   `window.batteryFitScale` is kept here for part2.js (still batteries).
    =========================================================== */
 
 (function (global) {
@@ -19,303 +26,194 @@
     const DESIGN_W = 1920;
     const DESIGN_H = 1080;
 
-    const BAT_W = 62;
-    const BAT_H = 100;
-    const GROUP_GAP = 12;
-
-    // Uniform battery scale once a group sits in any slot.
-    // Chosen so the largest group (6 yellow) fits the smallest slot.
-    const PLACED_SCALE = 0.82;
-
-    // Groups: count + the centre of their tray (absolute design px).
-    const GROUPS = [
-        { color: "blue", count: 4, cx: 506.5, cy: 948.5 },
-        { color: "yellow", count: 6, cx: 1413.5, cy: 948.5 },
-    ];
-
-    // Slot inner recesses (absolute design px).
+    // Slot centres (absolute design px) — must match the .slot / .socket CSS.
     const SLOTS = {
-        big: { x: 715, y: 143, w: 501, h: 250 },
-        "small-left": { x: 425.5, y: 552.5, w: 407, h: 139 }, // centre (629, 622)
-        "small-right": { x: 1098.5, y: 551.5, w: 407, h: 139 }, // centre (1302, 621)
+        big: { x: 815, y: 160.5, w: 300, h: 215 },        // centre (965, 268)
+        "small-left": { x: 534, y: 547, w: 190, h: 150 }, // centre (629, 622)
+        "small-right": { x: 1207, y: 546, w: 190, h: 150 }, // centre (1302, 621)
     };
+    // All three slots are drop targets.
+    const DROPPABLE = ["big", "small-left", "small-right"];
 
-    // Only the two bottom slots accept player drops.
-    const DROPPABLE = ["small-left", "small-right"];
+    // Code-tile scaling. Native size lives in the dock + small slots; it
+    // grows in the (bigger) whole slot, so the number scales with it.
+    const BIG_SCALE = 1.6;
+    const SMALL_SCALE = 1;
 
-    // Final resting rows inside the big (top) slot after charging.
-    const BIG_CX = 965.5;
-    const BIG_ROW = { blue: 217, yellow: 319 };
+    // Number-tray home centres (design px) = the tray's three cream pads.
+    const DOCK_Y = 950;
+    const DOCK_X = [816, 960, 1103];
 
     const pctX = (px) => (px / DESIGN_W) * 100 + "%";
     const pctY = (px) => (px / DESIGN_H) * 100 + "%";
 
     let stage = null;
-    let chargeFx = null;
-    let bigGlow = null;
-    let charged = false;
+    let connectorsEl = null;
+    let solved = false;
     let enabled = true; // dragging is gated off during the Screen 2 intro
     let contentEl = null;
     const slotEls = {};
-    const slotOccupant = {};
+    const socketEls = {};
+    const slotOccupant = {}; // slotId -> tile element
+    const tiles = []; // the three draggable code tiles
 
-    function groupWidth(count) {
-        return count * BAT_W + (count - 1) * GROUP_GAP;
-    }
-
-    // Scale for a group sitting in a SMALL slot: the uniform PLACED_SCALE,
-    // shrunk further when the group is too wide to fit (e.g. 7 batteries —
-    // 506px × 0.82 = 415px > the 407px slot, which used to overflow).
+    // Part 2 still uses batteries — keep the fit-scale helper available.
     const SMALL_SLOT_W = 407;
+    const BAT_W = 62, GROUP_GAP = 12, PLACED_SCALE = 0.82;
     function fitScale(count) {
-        return Math.min(PLACED_SCALE, (SMALL_SLOT_W * 0.96) / groupWidth(count));
+        const groupWidth = count * BAT_W + (count - 1) * GROUP_GAP;
+        return Math.min(PLACED_SCALE, (SMALL_SLOT_W * 0.96) / groupWidth);
     }
-    window.batteryFitScale = fitScale; // shared with part2.js / concept.js
+    window.batteryFitScale = fitScale;
 
-    function setTransform(group, scale) {
-        group.dataset.scale = scale;
-        group.style.transform = "translate(-50%, -50%) scale(" + scale + ")";
+    function slotScale(id) {
+        return id === "big" ? BIG_SCALE : SMALL_SCALE;
     }
 
-    function createGroups(screen) {
-        GROUPS.forEach((g) => {
-            // Create a permanent 20% opacity ghost in the tray
-            const ghostGroup = document.createElement("div");
-            ghostGroup.className = "battery-group battery-group--" + g.color + " tray-ghost";
-            ghostGroup.style.opacity = "0.2";
-            ghostGroup.style.pointerEvents = "none";
-            ghostGroup.style.zIndex = "5";
-            for (let i = 0; i < g.count; i++) {
-                const bat = document.createElement("img");
-                bat.className = "battery battery--" + g.color;
-                bat.src = "assets/images/" + g.color + "_battery.svg";
-                bat.alt = "";
-                bat.draggable = false;
-                ghostGroup.appendChild(bat);
+    function setTransform(el, scale) {
+        el.dataset.scale = scale;
+        el.style.transform = "translate(-50%, -50%) scale(" + scale + ")";
+    }
+
+    // role: "whole" goes to the big slot; "part" goes to either small slot.
+    function slotAccepts(id, tile) {
+        return id === "big" ? tile.dataset.role === "whole"
+                            : tile.dataset.role === "part";
+    }
+
+    function makeTile(value, role, ghost) {
+        const t = document.createElement("div");
+        t.className = "code-tile code-tile--" + role + (ghost ? " dock-ghost" : "");
+        t.dataset.value = value;
+        t.dataset.role = role;
+        const face = document.createElement("div");
+        face.className = "code-tile__face";
+        const num = document.createElement("span");
+        num.className = "code-tile__num";
+        num.textContent = value;
+        face.appendChild(num);
+        t.appendChild(face);
+        return t;
+    }
+
+    // Shuffle the dock order so the codes aren't shown sorted (which would
+    // telegraph which one is the whole). Re-roll if it lands fully ascending
+    // OR descending, so the row never looks ordered.
+    function shuffleDock(arr) {
+        const a = arr.slice();
+        for (let tries = 0; tries < 20; tries++) {
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                const t = a[i]; a[i] = a[j]; a[j] = t;
             }
-            ghostGroup.style.left = pctX(g.cx);
-            ghostGroup.style.top = pctY(g.cy);
-            setTransform(ghostGroup, 1);
-            (contentEl || screen).appendChild(ghostGroup);
+            const v = a.map(function (s) { return s.value; });
+            const asc = v[0] <= v[1] && v[1] <= v[2];
+            const desc = v[0] >= v[1] && v[1] >= v[2];
+            if (!asc && !desc) break;
+        }
+        return a;
+    }
 
-            const group = document.createElement("div");
-            group.className = "battery-group battery-group--" + g.color;
-            group.dataset.color = g.color;
-            group.dataset.nativeW = groupWidth(g.count);
-            group.dataset.homeX = g.cx;
-            group.dataset.homeY = g.cy;
-            group.dataset.location = "tray";
+    function createTiles() {
+        const codes = window.getCodes ? window.getCodes() : { whole: 8, parts: [5, 3] };
+        const spec = shuffleDock([
+            { value: codes.whole, role: "whole" },
+            { value: codes.parts[0], role: "part" },
+            { value: codes.parts[1], role: "part" },
+        ]);
 
-            for (let i = 0; i < g.count; i++) {
-                const bat = document.createElement("img");
-                bat.className = "battery battery--" + g.color;
-                bat.src = "assets/images/" + g.color + "_battery.svg";
-                bat.alt = g.color + " battery";
-                bat.draggable = false;
-                group.appendChild(bat);
-            }
+        spec.forEach(function (s, i) {
+            const homeX = DOCK_X[i];
+            const homeY = DOCK_Y;
 
-            group.style.left = pctX(g.cx);
-            group.style.top = pctY(g.cy);
-            setTransform(group, 1);
-
-            (contentEl || screen).appendChild(group);
-            attachDrag(group);
+            // No CSS ghost: the tray art's cream pads ARE the home slots.
+            const tile = makeTile(s.value, s.role, false);
+            tile.dataset.homeX = homeX;
+            tile.dataset.homeY = homeY;
+            tile.dataset.location = "dock";
+            tile.style.left = pctX(homeX);
+            tile.style.top = pctY(homeY);
+            setTransform(tile, 1);
+            contentEl.appendChild(tile);
+            tiles.push(tile);
+            attachDrag(tile);
         });
     }
 
-    function freeSlotOf(group) {
-        const prev = group.dataset.location;
-        if (prev && prev !== "tray" && slotOccupant[prev] === group) {
+    function freeSlotOf(tile) {
+        const prev = tile.dataset.location;
+        if (prev && prev !== "dock" && slotOccupant[prev] === tile) {
             slotOccupant[prev] = null;
         }
     }
 
-    function sendHome(group) {
-        freeSlotOf(group);
-        group.dataset.location = "tray";
-        group.style.left = pctX(parseFloat(group.dataset.homeX));
-        group.style.top = pctY(parseFloat(group.dataset.homeY));
-        setTransform(group, 1);
+    function sendHome(tile) {
+        freeSlotOf(tile);
+        tile.dataset.location = "dock";
+        tile.classList.remove("in-slot"); // restore the full code block in the dock
+        tile.style.left = pctX(parseFloat(tile.dataset.homeX));
+        tile.style.top = pctY(parseFloat(tile.dataset.homeY));
+        setTransform(tile, 1);
     }
 
-    function placeInSlot(group, id) {
-        freeSlotOf(group);
-        if (slotOccupant[id] && slotOccupant[id] !== group) {
+    function placeInSlot(tile, id) {
+        freeSlotOf(tile);
+        if (slotOccupant[id] && slotOccupant[id] !== tile) {
             sendHome(slotOccupant[id]);
         }
-        slotOccupant[id] = group;
-        group.dataset.location = id;
+        slotOccupant[id] = tile;
+        tile.dataset.location = id;
+        tile.classList.add("in-slot"); // drop the box; only the number stays
         const r = SLOTS[id];
-        group.style.left = pctX(r.x + r.w / 2);
-        group.style.top = pctY(r.y + r.h / 2);
-        setTransform(group, fitScale(group.children.length));
+        tile.style.left = pctX(r.x + r.w / 2);
+        tile.style.top = pctY(r.y + r.h / 2);
+        setTransform(tile, slotScale(id));
         if (global.SFX) global.SFX.play("place");
     }
 
-    /* ---- the charge sequence ---- */
-    function bothBottomFilled() {
-        return slotOccupant["small-left"] && slotOccupant["small-right"];
+    function allFilled() {
+        return DROPPABLE.every(function (id) { return slotOccupant[id]; });
     }
 
-    function moveGroupToBig(group, delay) {
-        const prevSlot = group.dataset.location;
-        let startRects = [];
-        for (let i = 0; i < group.children.length; i++) {
-            startRects.push(group.children[i].getBoundingClientRect());
-        }
-
-        if (prevSlot && prevSlot !== "tray" && SLOTS[prevSlot]) {
-            const slotData = SLOTS[prevSlot];
-            const ghost = document.createElement("div");
-            ghost.className = "battery-group battery-group--" + group.dataset.color;
-            ghost.style.opacity = "0.2";
-            ghost.style.pointerEvents = "none";
-            ghost.style.zIndex = "5";
-            for (let i = 0; i < group.children.length; i++) {
-                const bat = document.createElement("img");
-                bat.className = "battery battery--" + group.dataset.color;
-                bat.src = "assets/images/" + group.dataset.color + "_battery.svg";
-                bat.alt = "";
-                bat.draggable = false;
-                ghost.appendChild(bat);
-            }
-            ghost.style.left = pctX(slotData.x + slotData.w / 2);
-            ghost.style.top = pctY(slotData.y + slotData.h / 2);
-            setTransform(ghost, fitScale(ghost.children.length));
-            contentEl.appendChild(ghost);
-        }
-
-        freeSlotOf(group);
-        group.dataset.location = "big";
-        group.style.transition = "none";
-        group.style.left = pctX(BIG_CX);
-        group.style.top = pctY(BIG_ROW[group.dataset.color] || 268);
-        setTransform(group, PLACED_SCALE);
-
-        for (let i = 0; i < group.children.length; i++) {
-            group.children[i].style.opacity = "0";
-            group.children[i].style.transition = "opacity 0.2s ease";
-        }
-
-        global.requestAnimationFrame(() => {
-            let endRects = [];
-            for (let i = 0; i < group.children.length; i++) {
-                endRects.push(group.children[i].getBoundingClientRect());
-            }
-
-            for (let i = 0; i < group.children.length; i++) {
-                const bat = document.createElement("img");
-                bat.className = "battery battery--" + group.dataset.color;
-                bat.src = "assets/images/" + group.dataset.color + "_battery.svg";
-                bat.style.position = "fixed";
-                bat.style.left = startRects[i].left + "px";
-                bat.style.top = startRects[i].top + "px";
-                bat.style.width = startRects[i].width + "px";
-                bat.style.height = startRects[i].height + "px";
-                bat.style.zIndex = "100";
-                bat.style.transition = "left 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)";
-                document.body.appendChild(bat);
-
-                global.setTimeout(() => {
-                    bat.style.left = endRects[i].left + "px";
-                    bat.style.top = endRects[i].top + "px";
-                    
-                    global.setTimeout(() => {
-                        bat.remove();
-                        group.children[i].style.opacity = "1";
-                    }, 600);
-                }, delay + i * 150);
-            }
-        });
-    }
-
-    function clearReject() {
-        if (rejectTimer) {
-            global.clearTimeout(rejectTimer);
-            rejectTimer = null;
-        }
-        if (bigGlow) {
-            bigGlow.classList.remove("is-rejected");
-            bigGlow.src = "assets/images/Bigger_Slot.svg";
-        }
-    }
-
-    function startCharge() {
-        charged = true;
+    /* ---- the bot is fixed: light the circuit green ---- */
+    function startSolve() {
+        solved = true;
         abortHint();
         cancelIdle();
         clearReject();
-        const groups = [slotOccupant["small-left"], slotOccupant["small-right"]];
 
-        if (bigGlow) bigGlow.classList.remove("is-charged");
-        if (chargeFx) {
-            chargeFx.style.display = "block";
-            void chargeFx.offsetWidth;
-            chargeFx.classList.add("is-flowing");
-            chargeFx.classList.add("is-active");
-        }
+        if (connectorsEl) connectorsEl.classList.add("is-flowing");
         if (global.SFX) global.SFX.play("electricity", { loop: true });
 
-        // 1) move batteries up
         global.setTimeout(function () {
-            if (global.SFX) global.SFX.play("energy");
-            let delay = 0;
-            for (let id of ["small-left", "small-right"]) {
-                const group = slotOccupant[id];
-                if (group) {
-                    moveGroupToBig(group, delay);
-                    delay += group.children.length * 150;
-                }
-            }
-        }, 200);
-
-        // 3) top slot glows green, current settles to green, only big slot portion turns green
-        global.setTimeout(function () {
-            if (bigGlow) bigGlow.classList.add("is-charged");
-            if (chargeFx) chargeFx.classList.add("is-green");
-            const panelBig = document.querySelector(".panel--big");
-            if (panelBig) panelBig.classList.add("is-green");
+            if (connectorsEl) connectorsEl.classList.add("is-green");
+            DROPPABLE.forEach(function (id) {
+                if (socketEls[id]) socketEls[id].classList.add("is-charged");
+            });
             if (global.SFX) { global.SFX.stop("electricity"); global.SFX.play("powerUp"); }
-        }, 2000);
+        }, 1200);
 
-        // 4) finale: trays slide away and the board moves down to fill the
-        //    gap (the "fully charged" line is announced later, on Screen 3).
-        global.setTimeout(fullyCharged, 3600);
+        global.setTimeout(fullyCharged, 2700);
     }
 
-    /* ---- finale: bot fully charged ---- */
+    /* ---- finale: bot fixed ---- */
     function fullyCharged() {
-        // Fade out the trays and their placeholder ghosts.
-        const fadeOut = document.querySelectorAll(
-            "#s2-content .tray, #s2-content .tray-ghost"
-        );
+        const fadeOut = document.querySelectorAll("#s2-content .code-dock");
         fadeOut.forEach(function (el) {
             el.style.transition = "opacity 0.5s ease";
             el.style.opacity = "0";
             el.style.pointerEvents = "none";
         });
-        // Once faded, fully hide them so nothing lingers.
         global.setTimeout(function () {
-            fadeOut.forEach(function (el) {
-                el.style.display = "none";
-            });
+            fadeOut.forEach(function (el) { el.style.display = "none"; });
         }, 550);
 
-        // Slide the whole board down to fill the bottom gap.
         global.setTimeout(function () {
             if (contentEl) contentEl.classList.add("is-charged-final");
         }, 250);
 
-        // ("The bot is fully charged." now types on Screen 3 while the bot
-        // dances — no banner message here.)
-
-        // Once the board has settled, continue.
         global.setTimeout(function () {
             if (window.currentLevel === 2) {
-                // Chooser level: zoom out to the bot dancing full-screen
-                // (Screen 3, with THIS bot's charged art), let it celebrate,
-                // then end the level (curtain → next).
                 const s3Bot = document.querySelector("#screen-3 .charged-bot img");
                 if (s3Bot && window.currentScheme) {
                     s3Bot.src = "assets/images/" + window.currentScheme + "_bot_charged.webp";
@@ -323,102 +221,74 @@
                 if (window.GameFx) window.GameFx.exitBot();
                 global.setTimeout(function () {
                     if (window.returnToChooser) window.returnToChooser();
-                }, 5100); // ~1.3s zoom-out + banner unroll/type + dance beat
+                }, 5100);
             } else {
-                // Tutorial: stay inside the bot and teach the concept
-                // (Screen 4); concept.js then zooms out to reveal the dance.
                 if (window.GameNav) window.GameNav.show("screen-4");
                 if (window.ConceptScreen) window.ConceptScreen.play();
             }
-        }, 1600); // shorter now that no banner message holds the screen
+        }, 1600);
     }
 
-    /* ---- ghost hint: demonstrate the drag ----
-       A translucent copy of a still-undropped group glides into an empty
-       slot. cycles = 3 for the tutorial demo; Infinity for the levels'
-       inactivity nudge (loops until the player does something). The source
-       group + target slot are picked fresh each cycle, so the demo always
-       shows a move the player can actually make. */
+    /* ---- ghost hint: demonstrate a drag ---- */
     let hintActive = false;
     let hintGhost = null;
 
     function abortHint() {
         hintActive = false;
-        if (hintGhost) {
-            hintGhost.remove();
-            hintGhost = null;
-        }
+        if (hintGhost) { hintGhost.remove(); hintGhost = null; }
     }
 
-    function buildGhost(color, count) {
-        const g = document.createElement("div");
-        g.className = "battery-group battery-group--" + color + " is-ghost";
-        for (let i = 0; i < count; i++) {
-            const bat = document.createElement("img");
-            bat.className = "battery battery--" + color;
-            bat.src = "assets/images/" + color + "_battery.svg";
-            bat.alt = "";
-            bat.draggable = false;
-            g.appendChild(bat);
+    function pickDemoMove() {
+        for (let i = 0; i < tiles.length; i++) {
+            const tile = tiles[i];
+            if (tile.dataset.location !== "dock") continue;
+            const targets = tile.dataset.role === "whole"
+                ? ["big"]
+                : ["small-left", "small-right"];
+            const dst = targets.filter(function (id) { return !slotOccupant[id]; })[0];
+            if (dst) return { tile: tile, dst: dst };
         }
-        return g;
+        return null;
     }
 
-    const MOVE = 1000;
-    const HOLD = 250;
-    const FADE = 300;
-    const GAP = 250;
+    const MOVE = 1000, HOLD = 250, FADE = 300, GAP = 250;
     const CYCLE = MOVE + HOLD + FADE + GAP;
 
     function ghostRun(cycles) {
-        if (hintActive || charged || !contentEl) return;
+        if (hintActive || solved || !contentEl) return;
         hintActive = true;
         let n = 0;
 
         function cycle() {
             if (!hintActive) return;
-            if (n >= cycles || charged || !enabled) {
-                abortHint();
-                return;
-            }
+            if (n >= cycles || solved || !enabled) { abortHint(); return; }
             n += 1;
 
-            // a group still waiting in the tray → the first empty slot
-            const group = contentEl.querySelector(
-                '.battery-group[data-location="tray"]:not(.is-ghost):not(.tray-ghost)'
-            );
-            const dstId = DROPPABLE.filter(function (id) {
-                return !slotOccupant[id];
-            })[0];
-            if (!group || !dstId) {
-                abortHint();
-                return;
-            }
-            const slot = SLOTS[dstId];
+            const move = pickDemoMove();
+            if (!move) { abortHint(); return; }
+            const slot = SLOTS[move.dst];
 
             if (hintGhost) hintGhost.remove();
-            hintGhost = buildGhost(group.dataset.color, group.children.length);
-            hintGhost.style.left = group.style.left;
-            hintGhost.style.top = group.style.top;
+            hintGhost = makeTile(move.tile.dataset.value, move.tile.dataset.role, false);
+            hintGhost.classList.add("is-ghost");
+            hintGhost.style.left = move.tile.style.left;
+            hintGhost.style.top = move.tile.style.top;
             setTransform(hintGhost, 1);
             hintGhost.style.opacity = "0";
             contentEl.appendChild(hintGhost);
-            void hintGhost.offsetWidth; // settle the start position
+            void hintGhost.offsetWidth;
 
-            // fade in and glide to the slot (setTimeout, not rAF — reliable
-            // under headless virtual-time, same lesson as the scroll hint)
             hintGhost.style.transition =
                 "left " + MOVE + "ms ease, top " + MOVE + "ms ease, transform " +
                 MOVE + "ms ease, opacity 250ms ease";
             window.setTimeout(function () {
                 if (!hintActive || !hintGhost) return;
-                hintGhost.style.opacity = "0.3";
+                hintGhost.style.opacity = "0.5";
                 hintGhost.style.left = pctX(slot.x + slot.w / 2);
                 hintGhost.style.top = pctY(slot.y + slot.h / 2);
-                setTransform(hintGhost, fitScale(hintGhost.children.length));
+                setTransform(hintGhost, slotScale(move.dst));
             }, 30);
 
-            // fade out at the slot
             window.setTimeout(function () {
                 if (!hintActive || !hintGhost) return;
                 hintGhost.style.transition = "opacity " + FADE + "ms ease";
@@ -430,29 +300,20 @@
         cycle();
     }
 
-    /* ---- inactivity nudge (chooser levels only): if the kid does nothing
-       for IDLE_MS, loop the ghost demo until they interact ---- */
+    /* ---- inactivity nudge (chooser levels only) ---- */
     const IDLE_MS = 12000;
     let idleTimer = null;
 
     function cancelIdle() {
-        if (idleTimer) {
-            global.clearTimeout(idleTimer);
-            idleTimer = null;
-        }
+        if (idleTimer) { global.clearTimeout(idleTimer); idleTimer = null; }
     }
 
     function scheduleIdle() {
         cancelIdle();
-        if (window.currentLevel !== 2 || charged || !enabled) return;
-        idleTimer = global.setTimeout(function () {
-            ghostRun(Infinity);
-        }, IDLE_MS);
+        if (window.currentLevel !== 2 || solved || !enabled) return;
+        idleTimer = global.setTimeout(function () { ghostRun(Infinity); }, IDLE_MS);
     }
 
-    // Any pointer activity stops a running nudge and restarts the idle clock.
-    // Levels only — the tutorial's 3× demo must survive stray mouse moves
-    // (it's aborted by an actual drag start in attachDrag).
     function onActivity() {
         if (window.currentLevel !== 2) return;
         if (hintActive) abortHint();
@@ -460,17 +321,10 @@
     }
 
     function playHint() {
-        if (!contentEl || charged) {
-            enabled = true;
-            return;
-        }
-        enabled = true; // allow dragging during/after the hint
-        if (window.currentLevel === 2) {
-            // Levels: no upfront demo — but nudge after 12s of inactivity.
-            scheduleIdle();
-            return;
-        }
-        ghostRun(3); // tutorial: demonstrate the drag 3×
+        if (!contentEl || solved) { enabled = true; return; }
+        enabled = true;
+        if (window.currentLevel === 2) { scheduleIdle(); return; }
+        ghostRun(3); // tutorial: demonstrate the drag 3x
     }
 
     function slotAtPoint(clientX, clientY) {
@@ -479,12 +333,8 @@
             const el = slotEls[id];
             if (!el) continue;
             const r = el.getBoundingClientRect();
-            if (
-                clientX >= r.left &&
-                clientX <= r.right &&
-                clientY >= r.top &&
-                clientY <= r.bottom
-            ) {
+            if (clientX >= r.left && clientX <= r.right &&
+                clientY >= r.top && clientY <= r.bottom) {
                 return id;
             }
         }
@@ -497,62 +347,59 @@
         });
     }
 
-    /* ---- big-slot rejection: it's not a drop target in Part 1 ---- */
-    function overBigSlot(clientX, clientY) {
-        const el = slotEls["big"];
-        if (!el) return false;
-        const r = el.getBoundingClientRect();
-        return clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom;
+    /* ---- wrong drop: bounce home + flash the slot red ("no") ---- */
+    const rejectTimers = {};
+    function clearReject() {
+        DROPPABLE.forEach(function (id) {
+            if (rejectTimers[id]) { global.clearTimeout(rejectTimers[id]); rejectTimers[id] = null; }
+            if (slotEls[id]) slotEls[id].classList.remove("is-reject");
+        });
     }
 
-    // The big slot flashes red and shakes "no" while the group bounces home.
-    let rejectTimer = null;
-    function rejectBig(group) {
-        sendHome(group); // animated bounce back (the group's left/top transition)
-        if (!bigGlow || charged) return;
+    function rejectSlot(id, tile) {
+        sendHome(tile); // animated bounce back
+        if (solved) return;
         if (global.SFX) global.SFX.play("reject");
-        bigGlow.src = "assets/images/Bigger_Slot_Red.svg";
-        bigGlow.classList.remove("is-rejected");
-        void bigGlow.offsetWidth; // restart the shake on rapid re-drops
-        bigGlow.classList.add("is-rejected");
-        if (rejectTimer) global.clearTimeout(rejectTimer);
-        rejectTimer = global.setTimeout(function () {
-            bigGlow.classList.remove("is-rejected");
-            bigGlow.src = "assets/images/Bigger_Slot.svg"; // back to the green charge art
-            rejectTimer = null;
+        const el = slotEls[id];
+        if (el) {
+            el.classList.remove("is-reject");
+            void el.offsetWidth; // restart the shake on rapid re-drops
+            el.classList.add("is-reject");
+        }
+        if (rejectTimers[id]) global.clearTimeout(rejectTimers[id]);
+        rejectTimers[id] = global.setTimeout(function () {
+            if (el) el.classList.remove("is-reject");
+            rejectTimers[id] = null;
         }, 550);
     }
 
-    function attachDrag(group) {
-        let startX = 0;
-        let startY = 0;
-        let baseLeftPct = 0;
-        let baseTopPct = 0;
-        let stageRect = null;
-        let dragging = false;
+    function attachDrag(tile) {
+        let startX = 0, startY = 0, baseLeftPct = 0, baseTopPct = 0;
+        let stageRect = null, dragging = false;
 
-        group.addEventListener("pointerdown", (e) => {
+        tile.addEventListener("pointerdown", (e) => {
             if (hintActive) abortHint();
-            if (charged || !enabled) return; // locked after charging / during intro
+            if (solved || !enabled) return;
             e.preventDefault();
             dragging = true;
             if (global.SFX) global.SFX.play("pickup");
             stageRect = stage.getBoundingClientRect();
             startX = e.clientX;
             startY = e.clientY;
-            baseLeftPct = parseFloat(group.style.left);
-            baseTopPct = parseFloat(group.style.top);
-            group.classList.add("is-dragging");
-            setTransform(group, 1); // full size while dragging
-            group.setPointerCapture(e.pointerId);
+            baseLeftPct = parseFloat(tile.style.left);
+            baseTopPct = parseFloat(tile.style.top);
+            tile.classList.remove("in-slot"); // drag the WHOLE code block
+            tile.classList.add("is-dragging");
+            setTransform(tile, 1); // native size while dragging
+            tile.setPointerCapture(e.pointerId);
         });
 
-        group.addEventListener("pointermove", (e) => {
+        tile.addEventListener("pointermove", (e) => {
             if (!dragging) return;
             const dxPct = ((e.clientX - startX) / stageRect.width) * 100;
             const dyPct = ((e.clientY - startY) / stageRect.height) * 100;
-            group.style.left = baseLeftPct + dxPct + "%";
-            group.style.top = baseTopPct + dyPct + "%";
+            tile.style.left = baseLeftPct + dxPct + "%";
+            tile.style.top = baseTopPct + dyPct + "%";
 
             clearHover();
             const id = slotAtPoint(e.clientX, e.clientY);
@@ -562,72 +409,53 @@
         function endDrag(e) {
             if (!dragging) return;
             dragging = false;
-            group.classList.remove("is-dragging");
+            tile.classList.remove("is-dragging");
             clearHover();
             const id = slotAtPoint(e.clientX, e.clientY);
-            if (id) {
-                placeInSlot(group, id);
-                if (bothBottomFilled() && !charged) startCharge();
-            } else if (overBigSlot(e.clientX, e.clientY)) {
-                rejectBig(group); // wrong slot: shake "no" + bounce home
+            if (id && slotAccepts(id, tile)) {
+                placeInSlot(tile, id);
+                if (allFilled() && !solved) startSolve();
+            } else if (id) {
+                rejectSlot(id, tile); // wrong slot: shake "no" + bounce home
             } else {
-                sendHome(group);
+                sendHome(tile);
             }
         }
 
-        group.addEventListener("pointerup", endDrag);
-        group.addEventListener("pointercancel", endDrag);
+        tile.addEventListener("pointerup", endDrag);
+        tile.addEventListener("pointercancel", endDrag);
     }
 
     function setupBatteries() {
         if (!contentEl) return;
 
-        // Clear existing groups and ghosts
-        const oldGroups = contentEl.querySelectorAll(".battery-group, .tray-ghost");
-        oldGroups.forEach(el => el.remove());
+        contentEl.querySelectorAll(".code-tile").forEach(function (el) { el.remove(); });
+        tiles.length = 0;
 
-        // Set counts from the current stage's Part 1 config.
-        const c = window.getCounts ? window.getCounts(1) : { blue: 4, yellow: 6 };
-        GROUPS[0].count = c.blue;
-        GROUPS[1].count = c.yellow;
+        DROPPABLE.forEach(function (id) { slotOccupant[id] = null; });
 
-        // Reset slot occupancies
-        DROPPABLE.forEach((id) => {
-            slotOccupant[id] = null;
-        });
-        slotOccupant["big"] = null;
+        createTiles();
 
-        // Recreate the groups and ghosts
-        createGroups(contentEl);
-
-        // Reset state variables
-        charged = false;
+        solved = false;
         enabled = false;
         abortHint();
         cancelIdle();
         clearReject();
-        if (global.SFX) global.SFX.stop("electricity"); // safety: kill any loop
+        if (global.SFX) global.SFX.stop("electricity");
 
-        // Reset elements class lists
         contentEl.classList.remove("is-charged-final");
-        const panel = document.querySelector(".panel");
-        if (panel) panel.classList.remove("is-green");
-        const panelBig = document.querySelector(".panel--big");
-        if (panelBig) panelBig.classList.remove("is-green");
-        if (bigGlow) bigGlow.classList.remove("is-charged");
-        if (chargeFx) {
-            chargeFx.classList.remove("is-flowing", "is-active", "is-green");
-            chargeFx.style.display = "none";
-        }
-
-        // Reset tray and ghost styles
-        const trays = contentEl.querySelectorAll(".tray");
-        trays.forEach(tray => {
-            tray.style.opacity = "";
-            tray.style.display = "";
-            tray.style.pointerEvents = "";
-            tray.style.transition = "";
+        if (connectorsEl) connectorsEl.classList.remove("is-flowing", "is-green");
+        DROPPABLE.forEach(function (id) {
+            if (socketEls[id]) socketEls[id].classList.remove("is-charged");
         });
+
+        const dock = contentEl.querySelector(".code-dock");
+        if (dock) {
+            dock.style.opacity = "";
+            dock.style.display = "";
+            dock.style.pointerEvents = "";
+            dock.style.transition = "";
+        }
     }
 
     function init() {
@@ -635,17 +463,18 @@
         const screen = document.getElementById("screen-2");
         if (!stage || !screen) return;
 
-        chargeFx = document.getElementById("charge-fx");
+        connectorsEl = document.getElementById("connectors-2");
         contentEl = document.getElementById("s2-content");
-        bigGlow = document.querySelector(".slot-glow--big");
 
         document.querySelectorAll("#screen-2 .slot").forEach((el) => {
             const id = el.dataset.slot;
             slotEls[id] = el;
             slotOccupant[id] = null;
         });
+        socketEls.big = screen.querySelector(".socket--big");
+        socketEls["small-left"] = screen.querySelector(".socket--small-left");
+        socketEls["small-right"] = screen.querySelector(".socket--small-right");
 
-        // Inactivity tracking for the levels' looping ghost nudge.
         ["pointerdown", "pointermove"].forEach(function (ev) {
             screen.addEventListener(ev, onActivity, { passive: true });
         });
@@ -658,10 +487,7 @@
         setup: setupBatteries,
         setEnabled: function (v) {
             enabled = !!v;
-            if (!enabled) {
-                abortHint();
-                cancelIdle();
-            }
+            if (!enabled) { abortHint(); cancelIdle(); }
         },
         playHint: playHint,
     };

@@ -237,7 +237,7 @@
         const textEl = document.querySelector("#screen-1 .question__text");
         const msg = phase === "split"
             ? "Oh no! These bots are overcharged — tap one to fix it."
-            : "Scroll and tap a bot to charge it.";
+            : "Scroll and tap a bot to fix it.";
         if (window.Screen1Intro && window.Screen1Intro.setText) {
             window.Screen1Intro.setText(msg);
         } else if (textEl) {

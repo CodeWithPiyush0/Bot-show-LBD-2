@@ -1,13 +1,13 @@
 /* ===========================================================
    concept.js
-   Screen 4 — "These 2 parts make this whole."
-   Fills the two small slots (the parts) and the big slot (the
-   whole) with batteries, then runs a two-phase teaching animation
-   synced to the prompt:
-     Phase A ("These 2 parts"): the whole dims; the parts light up
-       one battery at a time.
-     Phase B ("make this whole."): the parts dim; the whole lights
-       up at full opacity and the big slot glows green.
+   Screen 4 — "These two parts make this one whole."
+   Shows the three CODES in their sockets — the two PARTS in the
+   small slots, the WHOLE in the big slot — then runs a two-phase
+   teaching animation synced to the prompt:
+     Phase A ("These two parts"): the whole dims; the part SOCKETS
+       light up one after another.
+     Phase B ("make this one whole."): the parts dim; the whole
+       lights up and its socket glows green.
    Timings are placeholders for the eventual voice-over.
    =========================================================== */
 
@@ -16,31 +16,31 @@
 
     const DESIGN_W = 1920;
     const DESIGN_H = 1080;
-    const SCALE = 0.82; // matches the placed-battery size used elsewhere
+
+    // Match the code-tile sizing in batteries.js.
+    const BIG_SCALE = 1.6;
+    const SMALL_SCALE = 1;
 
     const pctX = (px) => (px / DESIGN_W) * 100 + "%";
     const pctY = (px) => (px / DESIGN_H) * 100 + "%";
 
-    // Battery groups (design px centres). Small slots = the parts;
-    // big slot = the whole (blue row on top, yellow row below).
+    // Code positions (design px centres) = the socket centres.
     const LAYOUT = [
-        { color: "blue", count: 4, cx: 629, cy: 622, where: "small" }, // small-left
-        { color: "yellow", count: 6, cx: 1302, cy: 621, where: "small" }, // small-right
-        { color: "blue", count: 4, cx: 965.5, cy: 217, where: "big" }, // big top row
-        { color: "yellow", count: 6, cx: 965.5, cy: 319, where: "big" }, // big bottom row
+        { role: "part", cx: 629, cy: 622, where: "small" }, // small-left  = parts[0]
+        { role: "part", cx: 1302, cy: 621, where: "small" }, // small-right = parts[1]
+        { role: "whole", cx: 965, cy: 268, where: "big" }, // big = whole
     ];
 
     const TYPE_SPEED = 45;
-    const SLOT_GLOW_STAGGER = 600; // ms between the two part slots lighting up
-    const PHASE_GAP = 1800; // pause after the parts before the whole
+    const SLOT_GLOW_STAGGER = 600;
+    const PHASE_GAP = 1800;
 
-    let built = false;
     let contentEl = null;
-    let bigGlow = null;
-    let glowSmallLeft = null;
-    let glowSmallRight = null;
-    const smallBats = [];
-    const bigBats = [];
+    let bigSocket = null;
+    let socketLeft = null;
+    let socketRight = null;
+    const smallTiles = [];
+    let bigTile = null;
     const timers = [];
 
     function clearTimers() {
@@ -57,119 +57,90 @@
         (function tick() {
             if (i >= text.length) return;
             el.textContent += text.charAt(i);
-            if (global.SFX) global.SFX.play("type"); // one tick per character
+            if (global.SFX) global.SFX.play("type");
             i += 1;
             later(tick, speed);
         })();
     }
 
-    function makeGroup(g) {
-        // Small slots shrink wide groups further so 7+ batteries never overflow.
-        const scale = (g.where === "small" && window.batteryFitScale)
-            ? window.batteryFitScale(g.count)
-            : SCALE;
+    function makeTile(value, role, scale, cx, cy) {
         const el = document.createElement("div");
-        el.className = "battery-group battery-group--" + g.color;
-        el.style.left = pctX(g.cx);
-        el.style.top = pctY(g.cy);
+        // Concept tiles always sit IN a slot → number-only (light cream).
+        el.className = "code-tile code-tile--" + role + " in-slot";
+        el.style.left = pctX(cx);
+        el.style.top = pctY(cy);
         el.style.transform = "translate(-50%, -50%) scale(" + scale + ")";
         el.style.pointerEvents = "none";
-        const bats = [];
-        for (let i = 0; i < g.count; i++) {
-            const b = document.createElement("img");
-            b.className = "battery battery--" + g.color;
-            b.src = "assets/images/" + g.color + "_battery.svg";
-            b.alt = "";
-            b.draggable = false;
-            el.appendChild(b);
-            bats.push(b);
-        }
-        return { el: el, bats: bats };
+        const face = document.createElement("div");
+        face.className = "code-tile__face";
+        const num = document.createElement("span");
+        num.className = "code-tile__num";
+        num.textContent = value;
+        face.appendChild(num);
+        el.appendChild(face);
+        return el;
     }
 
     function build() {
         contentEl = document.getElementById("s4-content");
         if (!contentEl) return;
-        bigGlow = document.querySelector("#screen-4 .slot-glow--big");
-        glowSmallLeft = document.querySelector("#screen-4 .slot-glow--small-left");
-        glowSmallRight = document.querySelector("#screen-4 .slot-glow--small-right");
+        bigSocket = document.querySelector("#screen-4 .socket--big");
+        socketLeft = document.querySelector("#screen-4 .socket--small-left");
+        socketRight = document.querySelector("#screen-4 .socket--small-right");
 
-        // Clear existing groups
-        const oldGroups = contentEl.querySelectorAll(".battery-group");
-        oldGroups.forEach(el => el.remove());
-        smallBats.length = 0;
-        bigBats.length = 0;
+        contentEl.querySelectorAll(".code-tile").forEach(function (el) { el.remove(); });
+        smallTiles.length = 0;
+        bigTile = null;
 
-        // Counts from the current stage's Part 1 config (blue + yellow).
-        const c = window.getCounts ? window.getCounts(1) : { blue: 4, yellow: 6 };
-        LAYOUT[0].count = c.blue; // small-left (part 1)
-        LAYOUT[2].count = c.blue; // big top row
-        LAYOUT[1].count = c.yellow; // small-right (part 2)
-        LAYOUT[3].count = c.yellow; // big bottom row
+        const codes = window.getCodes ? window.getCodes() : { whole: 8, parts: [5, 3] };
+        const values = { 0: codes.parts[0], 1: codes.parts[1], 2: codes.whole };
 
-        LAYOUT.forEach(function (g) {
-            const made = makeGroup(g);
-            contentEl.appendChild(made.el);
-            (g.where === "big" ? bigBats : smallBats).push.apply(
-                g.where === "big" ? bigBats : smallBats,
-                made.bats
-            );
+        LAYOUT.forEach(function (g, i) {
+            const scale = g.where === "big" ? BIG_SCALE : SMALL_SCALE;
+            const el = makeTile(values[i], g.role, scale, g.cx, g.cy);
+            contentEl.appendChild(el);
+            if (g.where === "big") bigTile = el;
+            else smallTiles.push(el);
         });
-        built = true;
     }
 
     function resetState() {
-        smallBats.forEach(function (b) {
-            b.classList.remove("is-dim");
-        });
-        bigBats.forEach(function (b) {
-            b.classList.add("is-dim");
-        });
-        if (bigGlow) bigGlow.classList.remove("is-charged");
-        if (glowSmallLeft) glowSmallLeft.classList.remove("is-charged");
-        if (glowSmallRight) glowSmallRight.classList.remove("is-charged");
+        smallTiles.forEach(function (t) { t.classList.remove("is-dim"); });
+        if (bigTile) bigTile.classList.add("is-dim");
+        if (bigSocket) bigSocket.classList.remove("is-charged");
+        if (socketLeft) socketLeft.classList.remove("is-charged");
+        if (socketRight) socketRight.classList.remove("is-charged");
     }
 
     function phaseParts() {
-        // The whole dims; the part SLOTS glow one after another.
-        bigBats.forEach(function (b) {
-            b.classList.add("is-dim");
-        });
-        smallBats.forEach(function (b) {
-            b.classList.remove("is-dim");
-        });
-        if (bigGlow) bigGlow.classList.remove("is-charged");
-        if (glowSmallLeft) {
+        // "These two parts": the whole dims; the part sockets glow one by one.
+        if (bigTile) bigTile.classList.add("is-dim");
+        smallTiles.forEach(function (t) { t.classList.remove("is-dim"); });
+        if (bigSocket) bigSocket.classList.remove("is-charged");
+        if (socketLeft) {
             later(function () {
-                glowSmallLeft.classList.add("is-charged");
+                socketLeft.classList.add("is-charged");
                 if (global.SFX) global.SFX.play("ready");
             }, 0);
         }
-        if (glowSmallRight) {
+        if (socketRight) {
             later(function () {
-                glowSmallRight.classList.add("is-charged");
+                socketRight.classList.add("is-charged");
                 if (global.SFX) global.SFX.play("ready");
             }, SLOT_GLOW_STAGGER);
         }
     }
 
     function phaseWhole() {
-        // The parts dim (slot glow off); the whole lights up and glows.
-        if (glowSmallLeft) glowSmallLeft.classList.remove("is-charged");
-        if (glowSmallRight) glowSmallRight.classList.remove("is-charged");
-        smallBats.forEach(function (b) {
-            b.classList.add("is-dim");
-        });
-        bigBats.forEach(function (b) {
-            b.classList.remove("is-dim");
-        });
-        if (bigGlow) bigGlow.classList.add("is-charged");
+        // "make this one whole.": the parts dim; the whole lights up + glows.
+        if (socketLeft) socketLeft.classList.remove("is-charged");
+        if (socketRight) socketRight.classList.remove("is-charged");
+        smallTiles.forEach(function (t) { t.classList.add("is-dim"); });
+        if (bigTile) bigTile.classList.remove("is-dim");
+        if (bigSocket) bigSocket.classList.add("is-charged");
         if (global.SFX) global.SFX.play("ready");
     }
 
-    // Zoom OUT of the concept board to reveal the whole charged bot
-    // celebrating on Screen 3 (mirror of the enter-zoom), let it dance,
-    // then run `onDanced`. Reuses the zoomOutOfBot / revealBot keyframes.
     function revealDancingBot(onDanced) {
         const from = document.getElementById("screen-4");
         const screen3 = document.getElementById("screen-3");
@@ -183,10 +154,8 @@
         later(function () {
             if (screen3) screen3.classList.remove("is-revealing");
             if (from) from.classList.remove("is-zooming-out");
-            // announce once the reveal has settled, so the banner is SEEN
-            // unrolling while the bot dances
             if (global.Screen3Intro) global.Screen3Intro.showMessage();
-            later(onDanced, 3800); // banner opens + types (~2.2s), then a beat
+            later(onDanced, 3800);
         }, 1300);
     }
 
@@ -203,31 +172,24 @@
         if (q) q.classList.remove("is-open");
         if (textEl) textEl.textContent = "";
 
-        // Open the banner, then type the prompt. The phases start when
-        // the text begins, so the glow lines up with "These 2 parts".
         later(function () {
             if (q) q.classList.add("is-open");
             if (global.SFX) global.SFX.play("bannerOpen");
             later(function () {
                 if (textEl) typewriter(textEl, full, TYPE_SPEED);
 
-                // Phase A — "These 2 parts": part slots glow one by one.
                 phaseParts();
 
-                // Phase B — "make this whole.": the whole lights up.
                 const phaseBAt = SLOT_GLOW_STAGGER + PHASE_GAP;
                 later(phaseWhole, phaseBAt);
 
-                // Part 1 concept taught -> zoom OUT to the celebrating bot
-                // (Screen 3), let it dance, then the "your turn" interstitial
-                // leads into the Part 1 charge LEVELS.
                 later(function () {
                     revealDancingBot(function () {
                         if (global.showYourTurn) global.showYourTurn(1);
                         else if (global.startLevels) global.startLevels(1);
                     });
                 }, phaseBAt + 3000);
-            }, 650); // after the banner unrolls
+            }, 650);
         }, 150);
     }
 

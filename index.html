@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Bot Show - LBD 1</title>
+    <title>Bot Show - LBD 2</title>
 
     <!-- Fonts: Rajdhani -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -135,7 +135,7 @@
                         preload="auto"
                         aria-hidden="true"
                     ></video>
-                    <p class="question__text" data-text="Tap the bot to fix its batteries." data-text2="Scroll and tap a bot to fix it."></p>
+                    <p class="question__text" data-text="Let us start fixing." data-text2="Scroll and tap a bot to fix it."></p>
                 </div>
 
             </section>
@@ -154,81 +154,44 @@
                         alt=""
                         aria-hidden="true"
                     />
-                    <!-- Overlay exact original orange small slots so they don't turn green, and act as z-index covers -->
-                    <img
-                        class="panel panel--small-left"
-                        data-src="assets/images/panel_orange.webp"
-                        alt=""
-                        aria-hidden="true"
-                    />
-                    <img
-                        class="panel panel--small-right"
-                        data-src="assets/images/panel_orange.webp"
-                        alt=""
-                        aria-hidden="true"
-                    />
-                    <img
-                        class="panel panel--big"
-                        data-src="assets/images/panel_orange.webp"
-                        alt=""
-                        aria-hidden="true"
-                    />
+                    <!-- Board fix: cover the baked wide slots + connectors with a
+                         board-coloured patch, then draw the narrow sockets +
+                         connectors on top. -->
+                    <div class="slot-cover" aria-hidden="true"></div>
 
-                    <!-- Green glow overlay for the charged top slot.
-                         Uses the standalone slot art so the glow hugs
-                         its exact rounded shape. -->
-                    <img
-                        class="slot-glow slot-glow--big"
-                        data-src="assets/images/Bigger_Slot.svg"
-                        alt=""
-                        aria-hidden="true"
-                    />
+                    <!-- Connectors: connector.webp (recoloured per bot via hue),
+                         one per segment (2 diagonals + 1 horizontal). -->
+                    <div class="connectors" id="connectors-2" aria-hidden="true">
+                        <img class="connector connector--dl" src="assets/images/connector.webp" alt="" />
+                        <img class="connector connector--dr" src="assets/images/connector.webp" alt="" />
+                        <img class="connector connector--h" src="assets/images/connector.webp" alt="" />
+                        <svg class="conn-flow" viewBox="0 0 1920 1080" preserveAspectRatio="none">
+                            <path d="M 700 556 L 862 374" />
+                            <path d="M 1060 374 L 1224 556" />
+                            <path d="M 716 621 L 1215 621" />
+                        </svg>
+                    </div>
 
-                    <!-- Slot drop-zones (overlay the panel's recesses) -->
+                    <!-- Slot drop-zones (narrow; overlay the sockets) -->
                     <div class="slot slot--big" data-slot="big" aria-hidden="true"></div>
                     <div class="slot slot--small-left" data-slot="small-left" aria-hidden="true"></div>
                     <div class="slot slot--small-right" data-slot="small-right" aria-hidden="true"></div>
 
-                    <!-- Current flows through the orange connectors
-                         (paths trace the exact connector centerlines). -->
-                    <svg
-                        class="charge-fx"
-                        id="charge-fx"
-                        viewBox="0 0 1920 1080"
-                        preserveAspectRatio="none"
+                    <!-- Slot art (slot.svg recoloured per bot; src swapped in setPanelScheme) -->
+                    <img class="socket socket--big" src="assets/images/slot_orange.webp" alt="" aria-hidden="true" />
+                    <img class="socket socket--small-left" src="assets/images/slot_orange.webp" alt="" aria-hidden="true" />
+                    <img class="socket socket--small-right" src="assets/images/slot_orange.webp" alt="" aria-hidden="true" />
+
+                    <!-- Code dock (number tray). Fixed art for every bot — the
+                         3 cream pads are the tiles' home slots. -->
+                    <img
+                        class="code-dock"
+                        src="assets/images/Number_tray.webp"
+                        alt=""
                         aria-hidden="true"
-                    >
-                        <g class="charge-glow">
-                            <path d="M 660 540 L 748 420" />
-                            <path d="M 1260 540 L 1172 420" />
-                            <path d="M 850 628 L 1070 628" />
-                        </g>
-                        <!-- Travelling current pulses (diagonals only; the
-                             horizontal left->right connector is intentionally
-                             not animated). -->
-                        <g class="charge-flow">
-                            <path d="M 660 540 L 748 420" />
-                            <path d="M 1260 540 L 1172 420" />
-                        </g>
-                    </svg>
+                    />
 
-                    <!-- Battery trays at the bottom -->
-                    <div class="tray tray--blue">
-                        <div class="tray__inner"></div>
-                        <div class="tray__deco tray__deco--top"><i></i><i></i><i></i></div>
-                        <div class="tray__deco tray__deco--bottom"><i></i><i></i><i></i></div>
-                        <div class="tray__deco tray__deco--left"><i></i><i></i><i></i></div>
-                        <div class="tray__deco tray__deco--right"><i></i><i></i><i></i></div>
-                    </div>
-                    <div class="tray tray--yellow">
-                        <div class="tray__inner"></div>
-                        <div class="tray__deco tray__deco--top"><i></i><i></i><i></i></div>
-                        <div class="tray__deco tray__deco--bottom"><i></i><i></i><i></i></div>
-                        <div class="tray__deco tray__deco--left"><i></i><i></i><i></i></div>
-                        <div class="tray__deco tray__deco--right"><i></i><i></i><i></i></div>
-                    </div>
-
-                    <!-- Batteries are injected here by js/batteries.js -->
+                    <!-- Code tiles are injected here by js/batteries.js -->
 
                 </div>
 
@@ -251,7 +214,7 @@
                         preload="auto"
                         aria-hidden="true"
                     ></video>
-                    <p class="question__text" data-text="Drag the batteries in a small slots."></p>
+                    <p class="question__text" data-text="Drag the codes in the correct slots."></p>
                 </div>
 
             </section>
@@ -299,45 +262,25 @@
                         alt=""
                         aria-hidden="true"
                     />
-                    <img
-                        class="panel panel--small-left"
-                        data-src="assets/images/panel_orange.webp"
-                        alt=""
-                        aria-hidden="true"
-                    />
-                    <img
-                        class="panel panel--small-right"
-                        data-src="assets/images/panel_orange.webp"
-                        alt=""
-                        aria-hidden="true"
-                    />
-                    <img
-                        class="panel panel--big is-green"
-                        data-src="assets/images/panel_orange.webp"
-                        alt=""
-                        aria-hidden="true"
-                    />
-                    <!-- Green glow for the big (whole) slot -->
-                    <img
-                        class="slot-glow slot-glow--big"
-                        data-src="assets/images/Bigger_Slot.svg"
-                        alt=""
-                        aria-hidden="true"
-                    />
-                    <!-- Glow overlays for the small (part) slots -->
-                    <img
-                        class="slot-glow slot-glow--small-left"
-                        data-src="assets/images/Smaller_Slot.svg"
-                        alt=""
-                        aria-hidden="true"
-                    />
-                    <img
-                        class="slot-glow slot-glow--small-right"
-                        data-src="assets/images/Smaller_Slot.svg"
-                        alt=""
-                        aria-hidden="true"
-                    />
-                    <!-- Batteries injected by js/concept.js -->
+                    <!-- Board fix: cover baked slots, draw narrow sockets (same
+                         as Screen 2). -->
+                    <div class="slot-cover" aria-hidden="true"></div>
+
+                    <div class="connectors" id="connectors-4" aria-hidden="true">
+                        <img class="connector connector--dl" src="assets/images/connector.webp" alt="" />
+                        <img class="connector connector--dr" src="assets/images/connector.webp" alt="" />
+                        <img class="connector connector--h" src="assets/images/connector.webp" alt="" />
+                        <svg class="conn-flow" viewBox="0 0 1920 1080" preserveAspectRatio="none">
+                            <path d="M 700 556 L 862 374" />
+                            <path d="M 1060 374 L 1224 556" />
+                            <path d="M 716 621 L 1215 621" />
+                        </svg>
+                    </div>
+
+                    <img class="socket socket--big" src="assets/images/slot_orange.webp" alt="" aria-hidden="true" />
+                    <img class="socket socket--small-left" src="assets/images/slot_orange.webp" alt="" aria-hidden="true" />
+                    <img class="socket socket--small-right" src="assets/images/slot_orange.webp" alt="" aria-hidden="true" />
+                    <!-- Code tiles injected by js/concept.js -->
                 </div>
 
                 <!-- Concept prompt banner -->
@@ -358,7 +301,7 @@
                         preload="auto"
                         aria-hidden="true"
                     ></video>
-                    <p class="question__text" data-text="These 2 parts make this whole."></p>
+                    <p class="question__text" data-text="These two parts make this one whole."></p>
                 </div>
 
             </section>

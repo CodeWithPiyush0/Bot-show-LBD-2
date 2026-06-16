@@ -48,38 +48,49 @@
     transition: box-shadow 0.15s ease, background-color 0.15s ease;
 }
 
-/* Big slot — Figma 163:223: x=698 y=126 w=535.5 h=284.5 */
+/* Slots are now NARROW (a single code goes in each), centred on the same
+   points as before. Big slot: 300x215 @ centre (965,268). Small slots:
+   190x150 @ centres (629,622) / (1302,621). The .slot is the (invisible)
+   drop-zone; the matching .socket draws the visible recess. */
 .slot--big {
-    left: 36.354%;
-    top: 11.667%;
-    width: 27.891%;
-    height: 26.343%;
-    border-radius: 1.77cqw;
+    left: 42.448%;  /* 815 / 1920 */
+    top: 14.861%;   /* 160.5 / 1080 */
+    width: 15.625%; /* 300 / 1920 */
+    height: 19.907%; /* 215 / 1080 */
+    border-radius: 1.5cqw;
 }
 
-
-
-/* Small left — Figma 163:341: x=411 y=556 w=431 h=163 */
 .slot--small-left {
-    left: 21.406%;
-    top: 51.481%;
-    width: 22.448%;
-    height: 15.093%;
+    left: 27.813%;  /* 534 / 1920 */
+    top: 50.648%;   /* 547 / 1080 */
+    width: 9.896%;  /* 190 / 1920 */
+    height: 13.889%; /* 150 / 1080 */
 }
 
-/* Small right — Figma 163:282: x=1091 y=555 w=431 h=163 */
 .slot--small-right {
-    left: 56.823%;
-    top: 51.389%;
-    width: 22.448%;
-    height: 15.093%;
+    left: 62.865%;  /* 1207 / 1920 */
+    top: 50.556%;   /* 546 / 1080 */
+    width: 9.896%;  /* 190 / 1920 */
+    height: 13.889%; /* 150 / 1080 */
 }
 
-/* Highlight a slot while a battery is dragged over it */
+/* Highlight a slot while a code is dragged over it.
+   z-index bumped above the panel slot-overlays (z5) + big glow (z6)
+   so the ring is visible over the recess. */
 .slot.is-hover {
+    z-index: 7;
     background-color: rgba(255, 168, 64, 0.12);
     box-shadow: inset 0 0 0 0.2cqw rgba(255, 168, 64, 0.8),
         0 0 1.5cqw rgba(255, 168, 64, 0.5);
+}
+
+/* Wrong code dropped on a slot: flash red and shake "no". */
+.slot.is-reject {
+    z-index: 7;
+    background-color: rgba(255, 60, 40, 0.14);
+    box-shadow: inset 0 0 0 0.25cqw rgba(255, 60, 40, 0.9),
+        0 0 1.7cqw rgba(255, 60, 40, 0.55);
+    animation: slotReject 0.5s ease-in-out;
 }
 
 /* Top slot charged glow.
@@ -366,6 +377,233 @@
 
 .screen--2 .question.is-open .question__template {
     clip-path: inset(0 0 0 0); /* open: rolled fully open */
+}
+
+/* ---------- Code dock (number tray) ----------
+   Number_tray.webp art (same for every bot — colour never changes). Its
+   three cream pads are the tiles' home slots; the draggable tiles are
+   positioned over them in #s2-content. */
+.code-dock {
+    position: absolute;
+    left: 22.917%;  /* (960 - 520) / 1920 */
+    top: 79.537%;   /* 859 / 1080 (centres the pads at design y=950) */
+    width: 54.167%; /* 1040 / 1920 */
+    height: auto;
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* ---------- Board fix: hide the baked wide slots, draw narrow ones ----------
+   The panel image bakes in wide navy slots + orange connectors. We cover
+   that central region with a board-coloured patch (the board is a FLAT
+   fill, so the seam is invisible) and draw the narrower sockets +
+   connectors on top. --board-fill is set per scheme in main.js. */
+.slot-cover {
+    position: absolute;
+    left: 20.313%;   /* 390 / 1920 */
+    top: 10.648%;    /* 115 / 1080 */
+    width: 59.375%;  /* 1140 / 1920 */
+    height: 56.481%; /* 610 / 1080 */
+    background: var(--board-fill, #ffcc99);
+    border-radius: 3cqw;
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* Connectors = connector.webp, one per segment, recoloured per bot via a
+   hue shift (--conn-hue set in setPanelScheme). They sit BEHIND the sockets
+   (z3) so the glowing end nodes tuck into the slots. */
+.connectors {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+}
+.connector {
+    position: absolute;
+    height: auto;
+    transform-origin: center center;
+    filter: hue-rotate(var(--conn-hue, 0deg));
+}
+/* Positioned by CENTRE (left/top), then centred + rotated to the segment.
+   Spanned EDGE-to-EDGE so the glowing end nodes sit in the gaps (not hidden
+   under the slots). */
+.connector--h {
+    left: 50.286%;  /* between the two small slots */
+    top: 57.5%;
+    width: 25.99%;  /* 499px */
+    transform: translate(-50%, -50%);
+}
+.connector--dl {
+    left: 40.68%;
+    top: 43.06%;
+    width: 12.69%;  /* 244px */
+    transform: translate(-50%, -50%) rotate(-48.3deg);
+}
+.connector--dr {
+    left: 59.48%;
+    top: 43.06%;
+    width: 12.76%;  /* 245px */
+    transform: translate(-50%, -50%) rotate(47.97deg);
+}
+/* Correct solve → connectors glow green (hue from the orange base). */
+.connectors.is-green .connector {
+    filter: hue-rotate(110deg) saturate(1.35) brightness(1.05)
+        drop-shadow(0 0 0.5cqw rgba(70, 255, 140, 0.7));
+}
+
+/* Travelling current-flow pulses along the connectors (shown on solve). */
+.conn-flow {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 5;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+.connectors.is-flowing .conn-flow {
+    opacity: 1;
+}
+.conn-flow path {
+    fill: none;
+    stroke: #fff3c0;
+    stroke-width: 9;
+    stroke-linecap: round;
+    stroke-dasharray: 20 58;
+    filter: drop-shadow(0 0 4px #ffe69a);
+}
+.connectors.is-flowing .conn-flow path {
+    animation: connFlow 0.7s linear infinite;
+}
+.connectors.is-green .conn-flow path {
+    stroke: #e2fff0;
+    filter: drop-shadow(0 0 5px #7dffb0);
+}
+@keyframes connFlow {
+    to {
+        stroke-dashoffset: -78;
+    }
+}
+
+/* The visible socket = slot.svg art (per-bot orange recolour). The image
+   keeps its own aspect (182:163); height is auto. Positioned by top-left so
+   the slot centres on (965,268) / (629,622) / (1302,621). */
+.socket {
+    position: absolute;
+    height: auto;
+    z-index: 4;
+    pointer-events: none;
+}
+.socket--big {
+    left: 43.229%;   /* centre 965, width 270 */
+    top: 13.611%;    /* centre 268 */
+    width: 14.063%;  /* 270 / 1920 */
+}
+.socket--small-left {
+    left: 28.203%;   /* centre 629, width 175 */
+    top: 50.338%;    /* centre 622 */
+    width: 9.115%;   /* 175 / 1920 */
+}
+.socket--small-right {
+    left: 63.255%;   /* centre 1302 */
+    top: 50.245%;    /* centre 621 */
+    width: 9.115%;
+}
+.socket.is-charged {
+    animation: socketGlow 1.3s ease-in-out infinite alternate;
+}
+@keyframes socketGlow {
+    from {
+        filter: drop-shadow(0 0 0.5cqw rgba(70, 255, 140, 0.55));
+    }
+    to {
+        filter: drop-shadow(0 0 1.5cqw rgba(70, 255, 140, 0.95))
+            drop-shadow(0 0 2.4cqw rgba(70, 255, 140, 0.7));
+    }
+}
+
+/* ---------- Code tiles (draggable number blocks) ----------
+   A flat cream box with the number (matches the tray pads + drops into the
+   slot.svg sockets). Native size lives in the dock + small slots; it scales
+   up (transform) in the big slot, so the number scales too. */
+.code-tile {
+    position: absolute;
+    width: 5.9cqw; /* ~113px native square (fills the slot / tray pad) */
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    transform: translate(-50%, -50%) scale(1);
+    transform-origin: center center;
+    z-index: 10;
+    cursor: grab;
+    touch-action: none; /* JS owns the gesture (mouse + touch) */
+    user-select: none;
+    border-radius: 1.15cqw;
+    background: #ebddc2; /* cream face */
+    border: 0.42cqw solid #1c2a48; /* dark navy frame */
+    box-shadow: 0 0 0 0.12cqw #8a8e98; /* thin outer grey edge */
+    transition: left 0.25s ease, top 0.25s ease, transform 0.25s ease;
+}
+
+.code-tile__face {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Once dropped in a slot: only the number shows (light cream on the navy
+   slot); the cream box + frame disappear. */
+.code-tile.in-slot {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+}
+.code-tile.in-slot .code-tile__num {
+    color: #ebddc2;
+    font-size: 4.3cqw; /* a little bigger once placed in the slot */
+}
+
+.code-tile.is-dragging {
+    z-index: 100;
+    cursor: grabbing;
+    transition: none; /* follow the pointer 1:1 while dragging */
+}
+
+.code-tile__num {
+    font-family: "Rajdhani", sans-serif;
+    font-weight: 700;
+    font-size: 3.4cqw; /* scales with the tile via the parent transform */
+    line-height: 1;
+    color: #1b2a4d; /* dark navy-blue */
+    pointer-events: none;
+}
+
+/* Faint placeholder left in the dock once a tile is picked up. */
+.code-tile.dock-ghost {
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 5;
+    box-shadow: none;
+}
+
+/* Translucent copy used by the drag hint. */
+.code-tile.is-ghost {
+    pointer-events: none;
+    z-index: 90;
+    opacity: 0;
+    box-shadow: 0 0 0.7cqw rgba(120, 200, 255, 0.75);
+}
+
+/* Concept screen dimming (Screen 4 only uses this). */
+.code-tile.is-dim {
+    opacity: 0.25;
+    transition: opacity 0.4s ease;
 }
 
 /* ===========================================================
