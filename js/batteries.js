@@ -147,10 +147,26 @@
         }
     }
 
+    // A faint (20%) copy of a placed code, left in its tray home slot.
+    function addFade(tile) {
+        if (tile._fade || !contentEl) return;
+        const f = makeTile(tile.dataset.value, tile.dataset.role, false);
+        f.classList.add("dock-faded");
+        f.style.left = pctX(parseFloat(tile.dataset.homeX));
+        f.style.top = pctY(parseFloat(tile.dataset.homeY));
+        setTransform(f, 1);
+        contentEl.appendChild(f);
+        tile._fade = f;
+    }
+    function removeFade(tile) {
+        if (tile._fade) { tile._fade.remove(); tile._fade = null; }
+    }
+
     function sendHome(tile) {
         freeSlotOf(tile);
         tile.dataset.location = "dock";
         tile.classList.remove("in-slot"); // restore the full code block in the dock
+        removeFade(tile); // its tray slot is occupied by the real code again
         tile.style.left = pctX(parseFloat(tile.dataset.homeX));
         tile.style.top = pctY(parseFloat(tile.dataset.homeY));
         setTransform(tile, 1);
@@ -168,6 +184,7 @@
         tile.style.left = pctX(r.x + r.w / 2);
         tile.style.top = pctY(r.y + r.h / 2);
         setTransform(tile, slotScale(id));
+        addFade(tile); // leave a 20%-opacity copy of the code in the tray
         if (global.SFX) global.SFX.play("place");
     }
 
@@ -180,6 +197,7 @@
         solved = true;
         abortHint();
         cancelIdle();
+        stopGuide();
         clearReject();
 
         if (connectorsEl) connectorsEl.classList.add("is-flowing");
@@ -198,7 +216,7 @@
 
     /* ---- finale: bot fixed ---- */
     function fullyCharged() {
-        const fadeOut = document.querySelectorAll("#s2-content .code-dock");
+        const fadeOut = document.querySelectorAll("#s2-content .code-dock, #s2-content .dock-faded");
         fadeOut.forEach(function (el) {
             el.style.transition = "opacity 0.5s ease";
             el.style.opacity = "0";
@@ -232,8 +250,10 @@
     /* ---- ghost hint: demonstrate a drag ---- */
     let hintActive = false;
     let hintGhost = null;
+    let ghostGen = 0; // bumped to invalidate any in-flight ghost loop
 
     function abortHint() {
+        ghostGen++;
         hintActive = false;
         if (hintGhost) { hintGhost.remove(); hintGhost = null; }
     }
@@ -257,10 +277,11 @@
     function ghostRun(cycles) {
         if (hintActive || solved || !contentEl) return;
         hintActive = true;
+        const gen = ++ghostGen;
         let n = 0;
 
         function cycle() {
-            if (!hintActive) return;
+            if (gen !== ghostGen || !hintActive) return;
             if (n >= cycles || solved || !enabled) { abortHint(); return; }
             n += 1;
 
@@ -320,11 +341,114 @@
         scheduleIdle();
     }
 
+    /* ---- guided tutorial (currentLevel === 1 only) ----
+       Walk the child through ONE code at a time: glow the code + its target
+       slot and loop a ghost of that drag until they place it. Order: the two
+       PARTS into the small slots, then the WHOLE into the big slot. Only the
+       cued code is draggable at each step. */
+    let guideActive = false;
+    let guideSteps = [];
+    let guideIdx = 0;
+    let guideEngaged = false; // user grabbed the cued code → stop replaying the ghost
+
+    function buildGuideSteps() {
+        guideSteps = [];
+        tiles.forEach(function (t) { if (t.dataset.role === "part") guideSteps.push(t); });
+        tiles.forEach(function (t) { if (t.dataset.role === "whole") guideSteps.push(t); });
+    }
+
+    function guideTargetSlot(tile) {
+        if (tile.dataset.role === "whole") return "big";
+        return ["small-left", "small-right"].filter(function (id) {
+            return !slotOccupant[id];
+        })[0];
+    }
+
+    function clearGuideCue() {
+        tiles.forEach(function (t) { t.classList.remove("is-target"); });
+        DROPPABLE.forEach(function (id) {
+            if (socketEls[id]) socketEls[id].classList.remove("is-cue");
+        });
+    }
+
+    function guideCurrentTile() {
+        return guideActive ? guideSteps[guideIdx] : null;
+    }
+
+    // Loop a ghost of `tile` gliding into `slotId` until aborted.
+    function ghostLoop(tile, slotId) {
+        abortHint();
+        const gen = ghostGen;
+        if (!tile || solved || !contentEl) return;
+        hintActive = true;
+        function cycle() {
+            if (gen !== ghostGen || !hintActive || !guideActive) return;
+            const slot = SLOTS[slotId];
+            if (hintGhost) hintGhost.remove();
+            hintGhost = makeTile(tile.dataset.value, tile.dataset.role, false);
+            hintGhost.classList.add("is-ghost");
+            hintGhost.style.left = pctX(parseFloat(tile.dataset.homeX));
+            hintGhost.style.top = pctY(parseFloat(tile.dataset.homeY));
+            setTransform(hintGhost, 1);
+            hintGhost.style.opacity = "0";
+            contentEl.appendChild(hintGhost);
+            void hintGhost.offsetWidth;
+            hintGhost.style.transition =
+                "left " + MOVE + "ms ease, top " + MOVE + "ms ease, transform " +
+                MOVE + "ms ease, opacity 250ms ease";
+            window.setTimeout(function () {
+                if (!hintActive || !hintGhost) return;
+                hintGhost.style.opacity = "0.55";
+                hintGhost.style.left = pctX(slot.x + slot.w / 2);
+                hintGhost.style.top = pctY(slot.y + slot.h / 2);
+                setTransform(hintGhost, slotScale(slotId));
+            }, 30);
+            window.setTimeout(function () {
+                if (!hintActive || !hintGhost) return;
+                hintGhost.style.transition = "opacity " + FADE + "ms ease";
+                hintGhost.style.opacity = "0";
+            }, MOVE + HOLD);
+            window.setTimeout(cycle, CYCLE);
+        }
+        cycle();
+    }
+
+    function guideStep() {
+        if (!guideActive) return;
+        // skip any codes already placed
+        while (guideIdx < guideSteps.length && guideSteps[guideIdx].dataset.location !== "dock") {
+            guideIdx += 1;
+        }
+        clearGuideCue();
+        if (guideIdx >= guideSteps.length) { guideActive = false; abortHint(); return; }
+        const tile = guideSteps[guideIdx];
+        const slotId = guideTargetSlot(tile);
+        tile.classList.add("is-target");
+        if (socketEls[slotId]) socketEls[slotId].classList.add("is-cue");
+        // Only auto-demo the ghost until the child first grabs this code.
+        if (!guideEngaged) ghostLoop(tile, slotId);
+        else abortHint();
+    }
+
+    function startGuide() {
+        buildGuideSteps();
+        guideActive = true;
+        guideIdx = 0;
+        guideEngaged = false;
+        guideStep();
+    }
+
+    function stopGuide() {
+        guideActive = false;
+        guideEngaged = false;
+        clearGuideCue();
+    }
+
     function playHint() {
         if (!contentEl || solved) { enabled = true; return; }
         enabled = true;
         if (window.currentLevel === 2) { scheduleIdle(); return; }
-        ghostRun(3); // tutorial: demonstrate the drag 3x
+        startGuide(); // tutorial: step-by-step guide
     }
 
     function slotAtPoint(clientX, clientY) {
@@ -380,6 +504,8 @@
         tile.addEventListener("pointerdown", (e) => {
             if (hintActive) abortHint();
             if (solved || !enabled) return;
+            if (guideActive && tile !== guideCurrentTile()) return; // only the cued code
+            if (guideActive) guideEngaged = true; // stop replaying the ghost once grabbed
             e.preventDefault();
             dragging = true;
             if (global.SFX) global.SFX.play("pickup");
@@ -414,11 +540,14 @@
             const id = slotAtPoint(e.clientX, e.clientY);
             if (id && slotAccepts(id, tile)) {
                 placeInSlot(tile, id);
+                if (guideActive) { guideEngaged = false; guideStep(); } // next code: demo again
                 if (allFilled() && !solved) startSolve();
             } else if (id) {
                 rejectSlot(id, tile); // wrong slot: shake "no" + bounce home
+                if (guideActive) guideStep();   // re-cue the same code
             } else {
                 sendHome(tile);
+                if (guideActive) guideStep();   // re-cue the same code
             }
         }
 
@@ -440,6 +569,7 @@
         enabled = false;
         abortHint();
         cancelIdle();
+        stopGuide();
         clearReject();
         if (global.SFX) global.SFX.stop("electricity");
 

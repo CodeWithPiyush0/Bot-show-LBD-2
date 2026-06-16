@@ -416,35 +416,40 @@
 .connectors {
     position: absolute;
     inset: 0;
-    z-index: 3;
+    z-index: 5; /* above the sockets so the ends visibly meet the slots */
     pointer-events: none;
 }
+/* Natural proportions (height auto = no stretch). Width = the span between
+   the two connection points so the ends JUST TOUCH the slots. Diagonals run
+   from the big slot's side tabs to the small slots' top tabs (long enough to
+   look substantial without stretching). Positioned by CENTRE, then rotated. */
 .connector {
     position: absolute;
     height: auto;
     transform-origin: center center;
     filter: hue-rotate(var(--conn-hue, 0deg));
 }
-/* Positioned by CENTRE (left/top), then centred + rotated to the segment.
-   Spanned EDGE-to-EDGE so the glowing end nodes sit in the gaps (not hidden
-   under the slots). */
 .connector--h {
-    left: 50.286%;  /* between the two small slots */
-    top: 57.5%;
-    width: 25.99%;  /* 499px */
+    left: 50.286%;
+    top: 57.546%;
+    width: 25.94%;  /* 498px — just spans small-left → small-right */
+    height: 2cqw;   /* thinner than its natural ~47px */
     transform: translate(-50%, -50%);
 }
+/* Diagonals run CORNER-to-CORNER: big slot's bottom corner ↔ the small
+   slot's facing (inner) top corner. Sized so the end nodes JUST TOUCH the
+   corners (no overlap), same centres. */
 .connector--dl {
-    left: 40.68%;
-    top: 43.06%;
-    width: 12.69%;  /* 244px */
-    transform: translate(-50%, -50%) rotate(-48.3deg);
+    left: 40.36%;
+    top: 43.10%;
+    width: 12.5%;  /* 240px */
+    transform: translate(-50%, -50%) rotate(-51.4deg);
 }
 .connector--dr {
-    left: 59.48%;
-    top: 43.06%;
-    width: 12.76%;  /* 245px */
-    transform: translate(-50%, -50%) rotate(47.97deg);
+    left: 59.64%;
+    top: 43.10%;
+    width: 12.5%;
+    transform: translate(-50%, -50%) rotate(51.4deg);
 }
 /* Correct solve → connectors glow green (hue from the orange base). */
 .connectors.is-green .connector {
@@ -604,6 +609,46 @@
 .code-tile.is-dim {
     opacity: 0.25;
     transition: opacity 0.4s ease;
+}
+
+/* Faint copy left in the tray once a code is placed in a slot — the WHOLE
+   block stays visible (outline + fill + number), just faded. (A flat 20%
+   opacity made the cream box vanish into the cream tray pad.) */
+.code-tile.dock-faded {
+    pointer-events: none;
+    z-index: 6;
+    background: rgba(235, 221, 194, 0.25);
+    border-color: rgba(28, 42, 72, 0.4);
+    box-shadow: none;
+}
+.code-tile.dock-faded .code-tile__num {
+    color: rgba(28, 42, 72, 0.4);
+}
+
+/* Tutorial cue: glow the current code + its target slot (step-by-step guide). */
+.code-tile.is-target {
+    animation: codeCue 0.85s ease-in-out infinite alternate;
+}
+@keyframes codeCue {
+    from {
+        box-shadow: 0 0 0.5cqw rgba(255, 255, 255, 0.55);
+    }
+    to {
+        box-shadow: 0 0 1.6cqw rgba(255, 255, 255, 1),
+            0 0 2.8cqw rgba(255, 225, 120, 0.8);
+    }
+}
+.socket.is-cue {
+    animation: socketCue 0.85s ease-in-out infinite alternate;
+}
+@keyframes socketCue {
+    from {
+        filter: drop-shadow(0 0 0.5cqw rgba(255, 255, 255, 0.5));
+    }
+    to {
+        filter: drop-shadow(0 0 1.6cqw rgba(255, 255, 255, 0.95))
+            drop-shadow(0 0 2.8cqw rgba(255, 225, 120, 0.65));
+    }
 }
 
 /* ===========================================================
