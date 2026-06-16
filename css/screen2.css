@@ -549,8 +549,7 @@
     user-select: none;
     border-radius: 1.15cqw;
     background: #ebddc2; /* cream face */
-    border: 0.42cqw solid #1c2a48; /* dark navy frame */
-    box-shadow: 0 0 0 0.12cqw #8a8e98; /* thin outer grey edge */
+    border: 0.42cqw solid #5f5e5e; /* grey frame */
     transition: left 0.25s ease, top 0.25s ease, transform 0.25s ease;
 }
 
@@ -612,17 +611,11 @@
 }
 
 /* Faint copy left in the tray once a code is placed in a slot — the WHOLE
-   block stays visible (outline + fill + number), just faded. (A flat 20%
-   opacity made the cream box vanish into the cream tray pad.) */
+   block (cream fill + grey border + number) at 20% opacity. */
 .code-tile.dock-faded {
     pointer-events: none;
     z-index: 6;
-    background: rgba(235, 221, 194, 0.25);
-    border-color: rgba(28, 42, 72, 0.4);
-    box-shadow: none;
-}
-.code-tile.dock-faded .code-tile__num {
-    color: rgba(28, 42, 72, 0.4);
+    opacity: 0.2;
 }
 
 /* Tutorial cue: glow the current code + its target slot (step-by-step guide). */
