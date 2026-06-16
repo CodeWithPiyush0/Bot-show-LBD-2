@@ -125,8 +125,22 @@
 .s6-content {
     position: absolute;
     inset: 0;
-    transform: translateY(15%);
+    transform-origin: 50% 50%;
     transition: transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+/* Intro: shrink + shift down while the banner is open (matches Screen 2). */
+.s6-content.is-compact {
+    transform: translateY(10%) scale(0.85);
+}
+/* Finale: dock fades, board slides down to fill the gap (matches s4/s2). */
+.s6-content.is-charged-final {
+    transform: translateY(14%);
+}
+/* Concept board (Screen 8) sits a bit lower so it clears the banner. */
+.s8-content {
+    position: absolute;
+    inset: 0;
+    transform: translateY(14%);
 }
 .screen--6 .question__template {
     clip-path: inset(0 100% 0 0); /* closed: rolled shut to the badge */

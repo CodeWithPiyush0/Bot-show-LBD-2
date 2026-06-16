@@ -342,25 +342,40 @@
 
                 <div class="s6-content" id="s6-content">
                     <img class="panel" data-src="assets/images/panel_white.webp" alt="" aria-hidden="true" />
-                    <img class="panel panel--small-left" data-src="assets/images/panel_white.webp" alt="" aria-hidden="true" />
-                    <img class="panel panel--small-right" data-src="assets/images/panel_white.webp" alt="" aria-hidden="true" />
-                    <img class="panel panel--big" data-src="assets/images/panel_white.webp" alt="" aria-hidden="true" />
 
-                    <img class="slot-glow slot-glow--big" data-src="assets/images/Bigger_Slot_Red.svg" alt="" aria-hidden="true" />
+                    <!-- Board fix: board-coloured patch over the baked slots, then
+                         narrow sockets + connectors (same as Screen 2). -->
+                    <div class="slot-cover" aria-hidden="true"></div>
+
+                    <div class="connectors" id="connectors-6" aria-hidden="true">
+                        <img class="connector connector--dl" src="assets/images/connector.webp" alt="" />
+                        <img class="connector connector--dr" src="assets/images/connector.webp" alt="" />
+                        <img class="connector connector--h" src="assets/images/connector.webp" alt="" />
+                        <svg class="conn-flow" viewBox="0 0 1920 1080" preserveAspectRatio="none">
+                            <path d="M 722 531 L 827 400" />
+                            <path d="M 1093 400 L 1198 531" />
+                            <path d="M 741 621 L 1190 621" />
+                        </svg>
+                    </div>
 
                     <div class="slot slot--big" data-slot="big" aria-hidden="true"></div>
                     <div class="slot slot--small-left" data-slot="small-left" aria-hidden="true"></div>
                     <div class="slot slot--small-right" data-slot="small-right" aria-hidden="true"></div>
 
-                    <!-- Batteries injected by js/split.js (start in the big slot) -->
+                    <img class="socket socket--big" src="assets/images/slot_orange.webp" alt="" aria-hidden="true" />
+                    <img class="socket socket--small-left" src="assets/images/slot_orange.webp" alt="" aria-hidden="true" />
+                    <img class="socket socket--small-right" src="assets/images/slot_orange.webp" alt="" aria-hidden="true" />
+
+                    <img class="code-dock" src="assets/images/Number_tray.webp" alt="" aria-hidden="true" />
+                    <!-- Code tiles injected by js/part2.js -->
                 </div>
 
                 <div class="question" id="question-6">
                     <img class="question__template" src="assets/images/Question_template.webp" alt="" aria-hidden="true" />
                     <video class="question__avatar" src="assets/videos/bite_talking.mp4" muted loop autoplay playsinline preload="auto" aria-hidden="true"></video>
                     <p class="question__text"
-                        data-text="Tap the bot to split its batteries."
-                        data-text2="Drag the batteries to the small slots."></p>
+                        data-text="Tap the bot to fix it."
+                        data-text2="Drag the codes in the correct slots."></p>
                 </div>
 
             </section>
@@ -376,21 +391,27 @@
             <!-- ===== SCREEN 8 - concept: a whole is made of 2 parts ===== -->
             <section class="screen screen--8" id="screen-8" data-screen="8">
 
-                <div class="s6-content" id="s8-content">
+                <div class="s8-content" id="s8-content">
                     <img class="panel" data-src="assets/images/panel_white.webp" alt="" aria-hidden="true" />
-                    <img class="panel panel--small-left" data-src="assets/images/panel_white.webp" alt="" aria-hidden="true" />
-                    <img class="panel panel--small-right" data-src="assets/images/panel_white.webp" alt="" aria-hidden="true" />
-                    <img class="panel panel--big is-green" data-src="assets/images/panel_white.webp" alt="" aria-hidden="true" />
-                    <img class="slot-glow slot-glow--big is-green" data-src="assets/images/Bigger_Slot_Red.svg" alt="" aria-hidden="true" />
-                    <img class="slot-glow slot-glow--small-left" data-src="assets/images/Smaller_Slot.svg" alt="" aria-hidden="true" />
-                    <img class="slot-glow slot-glow--small-right" data-src="assets/images/Smaller_Slot.svg" alt="" aria-hidden="true" />
-                    <!-- Batteries injected by js/concept.js (screen 8 variant) -->
+
+                    <div class="slot-cover" aria-hidden="true"></div>
+
+                    <div class="connectors" id="connectors-8" aria-hidden="true">
+                        <img class="connector connector--dl" src="assets/images/connector.webp" alt="" />
+                        <img class="connector connector--dr" src="assets/images/connector.webp" alt="" />
+                        <img class="connector connector--h" src="assets/images/connector.webp" alt="" />
+                    </div>
+
+                    <img class="socket socket--big" src="assets/images/slot_orange.webp" alt="" aria-hidden="true" />
+                    <img class="socket socket--small-left" src="assets/images/slot_orange.webp" alt="" aria-hidden="true" />
+                    <img class="socket socket--small-right" src="assets/images/slot_orange.webp" alt="" aria-hidden="true" />
+                    <!-- Code tiles injected by js/part2.js (concept) -->
                 </div>
 
                 <div class="question" id="question-8">
                     <img class="question__template" src="assets/images/Question_template.webp" alt="" aria-hidden="true" />
                     <video class="question__avatar" src="assets/videos/bite_talking.mp4" muted loop autoplay playsinline preload="auto" aria-hidden="true"></video>
-                    <p class="question__text" data-text="This whole is made of these 2 parts."></p>
+                    <p class="question__text" data-text="This whole is made of these two parts."></p>
                 </div>
 
             </section>
@@ -445,9 +466,9 @@
     <script src="js/audio.js" defer></script>
     <script src="js/navigation.js" defer></script>
     <script src="js/concept.js" defer></script>
+    <script src="js/batteries.js" defer></script>
     <script src="js/part2.js" defer></script>
     <script src="js/intro.js" defer></script>
-    <script src="js/batteries.js" defer></script>
     <script src="js/main.js" defer></script>
     <script src="js/carousel.js" defer></script>
     <!-- TEMPORARY dev tool — remove this line and js/devmenu.js for production -->
