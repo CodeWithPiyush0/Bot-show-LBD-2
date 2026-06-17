@@ -12,5 +12,7 @@ When the game is final, surface a cleanup list and confirm before deleting. Know
 - **Overcharged bot assets** if Part-2-only: `*_bot_overcharged.webp`, the 3 chooser bots dropped (green/teal/yellow) + their `slot_*`/`panel_*`/`*_bot_charged` if unused, `White_purple_bot*`.
 - **Battery-era leftovers**: `*_battery.svg`, `battery_slots*.webp`, `Bigger_Slot*`/`Smaller_Slot.svg`, old `panel.svg`, `play_btn.*`/`orange_bot.svg` etc. — grep each filename across the repo before removing.
 - **Dead CSS/JS**: `.battery*`, `.tray*`, old `slot-glow*`/`charge-fx`/`.panel--*` rules, unused `ghostLoop`, `getCounts` remnants.
+- **Bot SVG sources** converted to webp (the new bots): `*_bot_fixed.svg` / `*_bot_glitch.svg` (orange/blue/Golen/pink/purple/red) — verify webp in use, then remove the SVGs. Old `White_blue_bot.webp` (replaced by blue carousel bot).
+- **Audio**: `assets/audios/glitch_full.mp3` (4.8s original; the in-use `glitch.mp3` is a ~0.34s trim of region A 0.27s+). Remove the full source once the trim is final.
 
 Grep every candidate (`git grep <name>`) to confirm zero references, and re-test the full flow after deleting.

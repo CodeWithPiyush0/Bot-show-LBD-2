@@ -48,6 +48,7 @@
         celebrate:   "celebrate.mp3",    // cheer when a fixed bot dances
         type:        "one_type.mp3",     // per-character typewriter tick
         curtain:     "curtain.mp3",      // theatre-curtain swish on every transition
+        glitch:      "glitch.mp3",       // broken-bot Spider-Verse glitch burst (synced in glitch-sfx.js)
         bgMusic:     "bg_music.mp3",     // looping music bed (gapless)
         win:         "win.mp3"           // WANTED (optional) — fanfare on Part/Game complete
     };
@@ -55,7 +56,7 @@
     var MASTER = 0.85;                 // overall volume (the master gain node)
     var PER = {                        // per-sound trims (0..1, relative to master)
         type: 0.5, ready: 0.6, place: 0.7, energy: 0.7, electricity: 0.55,
-        oneScroll: 0.85, fullScroll: 0.85,
+        oneScroll: 0.85, fullScroll: 0.85, glitch: 0.5,
         bgMusic: 0.26                  // quiet bed: 0.85 × 0.26 ≈ 22%
     };
 
