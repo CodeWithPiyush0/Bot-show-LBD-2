@@ -14,24 +14,21 @@
     window.gamePart = 1;
 
     // ---- Per-stage puzzle config -----------------------------------------
-    // 5 stages: Tutorial, then Levels 1-4.
-    //   Both parts use codes: `{ whole, parts:[a, b] }` with a + b === whole.
-    //   Part 1 = combine (drag PARTS into the small slots first, then the WHOLE
-    //   into the big). Part 2 = split (top-down: the WHOLE into the big slot
-    //   first, then the PARTS into the small slots).
+    // 6 stages: Tutorial, then Levels 1-5. One unified "fix with codes" puzzle
+    // (`{ whole, parts:[a, b] }`, a + b === whole). The kid drags the three
+    // codes into the three slots in ANY order (top/whole or bottom/parts first).
     window.STAGES = [
-        { key: "tutorial", part1: { whole: 8,  parts: [5, 3]  }, part2: { whole: 8,  parts: [2, 6]  } },
-        { key: "level1",   part1: { whole: 12, parts: [6, 6]  }, part2: { whole: 12, parts: [6, 6]  } },
-        { key: "level2",   part1: { whole: 20, parts: [9, 11] }, part2: { whole: 16, parts: [7, 9]  } },
-        { key: "level3",   part1: { whole: 20, parts: [8, 12] }, part2: { whole: 20, parts: [9, 11] } },
-        { key: "level4",   part1: { whole: 15, parts: [8, 7]  }, part2: { whole: 20, parts: [8, 12] } },
+        { key: "tutorial", part1: { whole: 8,  parts: [5, 3]  } },
+        { key: "level1",   part1: { whole: 12, parts: [6, 6]  } },
+        { key: "level2",   part1: { whole: 15, parts: [8, 7]  } },
+        { key: "level3",   part1: { whole: 16, parts: [7, 9]  } },
+        { key: "level4",   part1: { whole: 20, parts: [9, 11] } },
+        { key: "level5",   part1: { whole: 20, parts: [8, 12] } },
     ];
     window.gameStage = 0; // index into STAGES (0 = Tutorial)
-    // Codes for the current stage: { whole, parts:[a, b] }. part 1 = combine
-    // (bottom-up), part 2 = split (top-down) — same data shape.
     window.getCodes = function (part) {
         const s = window.STAGES[window.gameStage] || window.STAGES[0];
-        return part === 2 ? s.part2 : s.part1;
+        return (part === 2 && s.part2) ? s.part2 : s.part1; // part2 dropped; falls back
     };
 
     // Each bot has its own interior-panel colour scheme (per the Figma):
@@ -449,24 +446,15 @@
         function returnToChooser() {
             if (window.BotChooser) window.BotChooser.onFixed(window.currentScheme);
 
-            if ((window.gameStage || 1) > 4) {
-                // All 4 bots of this part are fixed.
+            if ((window.gameStage || 1) > 5) {
+                // All 5 level bots are fixed → the game is complete.
                 if (window.SFX) window.SFX.play("win");
-                if (window.gamePart === 1) {
-                    // Part 1 (charge) done → on to the Part 2 (split) tutorial.
-                    playCurtain("Part 1 Complete!", "Now let's fix the overcharged bots…", function () {
-                        startPart2Tutorial();
-                    });
-                } else {
-                    // Part 2 (split) done → the whole game is complete.
-                    playCurtain("All Bots Fixed!", "Fantastic work — you fixed every bot!", function () {
-                        window.gamePart = 1;
-                        setupLevel(1);
-                        window.GameNav.show("screen-pre");
-                    });
-                }
+                playCurtain("All Bots Fixed!", "Fantastic work — you fixed every bot!", function () {
+                    setupLevel(1);
+                    window.GameNav.show("screen-pre");
+                });
             } else {
-                // Next level of the same part — TEXTLESS curtain (no level text).
+                // Next level — TEXTLESS curtain (no level text).
                 playCurtain("", "", function () {
                     window.GameNav.show("screen-1");
                     if (window.BotChooser) window.BotChooser.enterChooser(false);

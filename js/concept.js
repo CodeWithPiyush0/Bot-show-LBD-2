@@ -96,12 +96,13 @@
             });
         }
 
-        function resetState() {
+        // Pre-Phase-A dim state for a lesson (the side that lights up first
+        // stays bright). wholeFirst = the "split" lesson (whole glows first).
+        function setInitial(wholeFirst) {
             if (bigSocket) bigSocket.classList.remove("is-charged");
             if (socketLeft) socketLeft.classList.remove("is-charged");
             if (socketRight) socketRight.classList.remove("is-charged");
-            // pre-Phase-A dim state
-            if (opts.wholeFirst) {
+            if (wholeFirst) {
                 if (bigTile) bigTile.classList.remove("is-dim");
                 smallTiles.forEach(function (t) { t.classList.add("is-dim"); });
             } else {
@@ -152,30 +153,40 @@
 
             const q = document.getElementById(opts.questionId);
             const textEl = q ? q.querySelector(".question__text") : null;
-            const full = textEl ? textEl.getAttribute("data-text") || "" : "";
+            // One or more LESSONS taught in sequence in the same banner. Each:
+            // { text, wholeFirst }. Default = a single lesson from data-text.
+            const lessons = opts.lessons || [{
+                text: textEl ? textEl.getAttribute("data-text") || "" : "",
+                wholeFirst: opts.wholeFirst,
+            }];
 
-            resetState();
             if (q) q.classList.remove("is-open");
             if (textEl) textEl.textContent = "";
+            setInitial(lessons[0].wholeFirst);
 
-            const phaseA = opts.wholeFirst ? phaseWhole : phaseParts;
-            const phaseB = opts.wholeFirst ? phaseParts : phaseWhole;
+            const PHASE_AT = SLOT_GLOW_STAGGER + PHASE_GAP; // phase B start
+            const LESSON_MS = PHASE_AT + 1800;              // phases + read beat
 
+            let t = 150;
             later(function () {
                 if (q) q.classList.add("is-open");
                 if (global.SFX) global.SFX.play("bannerOpen");
+            }, t);
+            t += 650;
+
+            lessons.forEach(function (lesson) {
                 later(function () {
-                    if (textEl) typewriter(textEl, full, TYPE_SPEED);
+                    setInitial(lesson.wholeFirst);
+                    if (textEl) typewriter(textEl, lesson.text, TYPE_SPEED);
+                    var phaseA = lesson.wholeFirst ? phaseWhole : phaseParts;
+                    var phaseB = lesson.wholeFirst ? phaseParts : phaseWhole;
                     phaseA();
-                    const phaseBAt = SLOT_GLOW_STAGGER + PHASE_GAP;
-                    later(phaseB, phaseBAt);
-                    later(function () {
-                        reveal(function () {
-                            opts.onDone();
-                        });
-                    }, phaseBAt + 3000);
-                }, 650);
-            }, 150);
+                    later(phaseB, PHASE_AT);
+                }, t);
+                t += LESSON_MS;
+            });
+
+            later(function () { reveal(opts.onDone); }, t + 400);
         }
 
         return { play: play };
@@ -183,13 +194,18 @@
 
     global.createConcept = createConcept;
 
-    /* Part 1 instance (Screen 4 → Screen 3). */
+    /* The concept (Screen 4 → Screen 3) teaches BOTH directions in one go:
+       first "two parts make a whole" (combine), then "a whole splits into two
+       parts" (split). */
     global.ConceptScreen = createConcept({
         contentId: "s4-content",
         screenId: "screen-4",
         questionId: "question-4",
         getCodes: function () { return window.getCodes(1); },
-        wholeFirst: false,
+        lessons: [
+            { text: "These two parts make this one whole.", wholeFirst: false },
+            { text: "This whole can be split into these two parts.", wholeFirst: true },
+        ],
         fromScreenId: "screen-4",
         toScreenId: "screen-3",
         onReveal: function () { if (window.Screen3Intro) window.Screen3Intro.showMessage(); },

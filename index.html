@@ -81,35 +81,23 @@
                      carousel.js toggles which set is visible. -->
                 <div class="bot-carousel" id="bot-carousel" aria-hidden="true">
                     <div class="bot-carousel__track" id="bot-carousel-track">
-                        <!-- Low bots (CHARGE phase) -->
-                        <!-- gold/yellow (recoloured from orange) so the Part-1 LEVELS don't reuse
-                             the orange bot the player already fixed in the Part-1 tutorial -->
+                        <!-- The 5 LEVEL bots (one per level). gold replaces the
+                             orange TUTORIAL bot so it isn't reused. All shown in
+                             one chooser (no charge/split phases now). -->
                         <button class="carousel-bot" type="button" data-scheme="gold" data-state="low">
-                            <img src="assets/images/gold_bot_low.webp" alt="Low gold bot" draggable="false" />
+                            <img src="assets/images/gold_bot_low.webp" alt="Broken gold bot" draggable="false" />
                         </button>
                         <button class="carousel-bot" type="button" data-scheme="blue" data-state="low">
-                            <img src="assets/images/blue_bot_low.webp" alt="Low blue bot" draggable="false" />
+                            <img src="assets/images/blue_bot_low.webp" alt="Broken blue bot" draggable="false" />
                         </button>
                         <button class="carousel-bot" type="button" data-scheme="purple" data-state="low">
-                            <img src="assets/images/purple_bot_low.webp" alt="Low purple bot" draggable="false" />
+                            <img src="assets/images/purple_bot_low.webp" alt="Broken purple bot" draggable="false" />
                         </button>
                         <button class="carousel-bot" type="button" data-scheme="pink" data-state="low">
-                            <img src="assets/images/pink_bot_low.webp" alt="Low pink bot" draggable="false" />
+                            <img src="assets/images/pink_bot_low.webp" alt="Broken pink bot" draggable="false" />
                         </button>
-                        <!-- Overcharged bots (SPLIT phase) — a DIFFERENT colour set
-                             from the low bots so no bot is reused for both states.
-                             (A CSS red chest-glow is layered on in the chooser.) -->
-                        <button class="carousel-bot" type="button" data-scheme="red" data-state="overcharged">
-                            <img src="assets/images/red_bot_overcharged.webp" alt="Overcharged red bot" draggable="false" />
-                        </button>
-                        <button class="carousel-bot" type="button" data-scheme="green" data-state="overcharged">
-                            <img src="assets/images/green_bot_overcharged.webp" alt="Overcharged green bot" draggable="false" />
-                        </button>
-                        <button class="carousel-bot" type="button" data-scheme="teal" data-state="overcharged">
-                            <img src="assets/images/teal_bot_overcharged.webp" alt="Overcharged teal bot" draggable="false" />
-                        </button>
-                        <button class="carousel-bot" type="button" data-scheme="yellow" data-state="overcharged">
-                            <img src="assets/images/yellow_bot_overcharged.webp" alt="Overcharged yellow bot" draggable="false" />
+                        <button class="carousel-bot" type="button" data-scheme="red" data-state="low">
+                            <img src="assets/images/red_bot_overcharged.webp" alt="Broken red bot" draggable="false" />
                         </button>
                     </div>
                     <!-- Prev / Next arrows (for desktop / kids who don't scroll) -->
@@ -135,7 +123,7 @@
                         preload="auto"
                         aria-hidden="true"
                     ></video>
-                    <p class="question__text" data-text="Let us start fixing." data-text2="Scroll and tap a bot to fix it."></p>
+                    <p class="question__text" data-text="Tap the bot to fix its codes." data-text2="Scroll and tap a bot to fix it."></p>
                 </div>
 
             </section>

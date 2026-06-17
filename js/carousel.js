@@ -220,7 +220,7 @@
             b.classList.remove("is-selected");
         });
 
-        if ((global.gameStage || 1) > 4) {
+        if ((global.gameStage || 1) > 5) { // 5 levels, then the game is done
             if (global.showLevelTransition) global.showLevelTransition();
             return;
         }

@@ -205,13 +205,17 @@
             if (hintGhost) { hintGhost.remove(); hintGhost = null; }
         }
 
+        // Pick a valid demo move, ROUND-ROBIN through the undropped codes so the
+        // ghost shows BOTH the whole→big and parts→small moves (free order).
+        let demoIdx = 0;
         function pickDemoMove() {
-            for (let i = 0; i < tiles.length; i++) {
-                const tile = tiles[i];
-                if (tile.dataset.location !== "dock") continue;
+            const undropped = tiles.filter(function (t) { return t.dataset.location === "dock"; });
+            if (!undropped.length) return null;
+            for (let k = 0; k < undropped.length; k++) {
+                const tile = undropped[(demoIdx + k) % undropped.length];
                 const targets = tile.dataset.role === "whole" ? ["big"] : ["small-left", "small-right"];
                 const dst = targets.filter(function (id) { return !slotOccupant[id]; })[0];
-                if (dst) return { tile: tile, dst: dst };
+                if (dst) { demoIdx = (demoIdx + k + 1) % undropped.length; return { tile: tile, dst: dst }; }
             }
             return null;
         }
@@ -289,44 +293,30 @@
             scheduleIdle();
         }
 
-        /* ---- guided tutorial (currentLevel === 1) ---- */
+        /* ---- guided tutorial (currentLevel === 1) ----
+           Glow EVERY undropped code + every empty slot and demo valid moves
+           (round-robin). The kid can place the codes in ANY order — top (whole
+           → big) or bottom (parts → small) first; nothing is locked. */
         let guideActive = false;
-        let guideSteps = [];
-        let guideIdx = 0;
-        let guideEngaged = false;
 
-        function buildGuideSteps() {
-            guideSteps = [];
-            const parts = function () { tiles.forEach(function (t) { if (t.dataset.role === "part") guideSteps.push(t); }); };
-            const whole = function () { tiles.forEach(function (t) { if (t.dataset.role === "whole") guideSteps.push(t); }); };
-            if (opts.guideWholeFirst) { whole(); parts(); } else { parts(); whole(); }
-        }
-        function guideTargetSlot(tile) {
-            if (tile.dataset.role === "whole") return "big";
-            return ["small-left", "small-right"].filter(function (id) { return !slotOccupant[id]; })[0];
-        }
         function clearGuideCue() {
             tiles.forEach(function (t) { t.classList.remove("is-target"); });
             DROPPABLE.forEach(function (id) { if (socketEls[id]) socketEls[id].classList.remove("is-cue"); });
         }
-        function guideCurrentTile() { return guideActive ? guideSteps[guideIdx] : null; }
-        function guideStep() {
+        function cueTutorial() {
             if (!guideActive) return;
-            while (guideIdx < guideSteps.length && guideSteps[guideIdx].dataset.location !== "dock") guideIdx += 1;
             clearGuideCue();
-            if (guideIdx >= guideSteps.length) { guideActive = false; abortHint(); return; }
-            const tile = guideSteps[guideIdx];
-            const slotId = guideTargetSlot(tile);
-            tile.classList.add("is-target");
-            if (socketEls[slotId]) socketEls[slotId].classList.add("is-cue");
-            if (!guideEngaged) ghostLoop(tile, slotId); else abortHint();
+            let any = false;
+            tiles.forEach(function (t) {
+                if (t.dataset.location === "dock") { t.classList.add("is-target"); any = true; }
+            });
+            DROPPABLE.forEach(function (id) {
+                if (!slotOccupant[id] && socketEls[id]) socketEls[id].classList.add("is-cue");
+            });
+            if (any) ghostRun(Infinity); // demo valid moves; the kid may do any of them
         }
-        function startGuide() {
-            buildGuideSteps();
-            guideActive = true; guideIdx = 0; guideEngaged = false;
-            guideStep();
-        }
-        function stopGuide() { guideActive = false; guideEngaged = false; clearGuideCue(); }
+        function startGuide() { guideActive = true; cueTutorial(); }
+        function stopGuide() { guideActive = false; clearGuideCue(); }
 
         function playHint() {
             if (!contentEl || solved) { enabled = true; return; }
@@ -374,10 +364,8 @@
             let stageRect = null, dragging = false;
 
             tile.addEventListener("pointerdown", (e) => {
-                if (hintActive) abortHint();
+                if (hintActive) abortHint(); // grabbing a code stops the demo
                 if (solved || !enabled) return;
-                if (guideActive && tile !== guideCurrentTile()) return;
-                if (guideActive) guideEngaged = true;
                 e.preventDefault();
                 dragging = true;
                 stageRect = stage.getBoundingClientRect();
@@ -407,14 +395,14 @@
                 const id = slotAtPoint(e.clientX, e.clientY);
                 if (id && slotAccepts(id, tile)) {
                     placeInSlot(tile, id);
-                    if (guideActive) { guideEngaged = false; guideStep(); }
+                    if (guideActive) cueTutorial(); // re-glow remaining + re-demo
                     if (allFilled() && !solved) startSolve();
                 } else if (id) {
                     rejectSlot(id, tile);
-                    if (guideActive) guideStep();
+                    if (guideActive) cueTutorial();
                 } else {
                     sendHome(tile);
-                    if (guideActive) guideStep();
+                    if (guideActive) cueTutorial();
                 }
             }
             tile.addEventListener("pointerup", endDrag);
