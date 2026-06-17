@@ -244,23 +244,34 @@
             textEl.textContent = msg;
         }
 
-        let focus = null;
-        if (centerFixed && lastFixed) {
-            focus = lastFixed; // show the just-fixed bot dancing in front
-        } else {
-            // otherwise bring the first still-broken bot of this phase to centre
-            focus = bots().filter(function (b) {
-                return b.dataset.state === wantState() && !b.classList.contains("is-fixed") && !b.classList.contains("is-locked");
-            })[0];
-        }
-        // Keep THREE bots in view: if the focal bot sits at either end of the
-        // row, centre its inner neighbour instead so a side isn't left empty
-        // (the player drags/scrolls to reach the rest).
+        // Always centre a STILL-BROKEN (tappable) bot — never the just-fixed
+        // one. A fixed bot in the middle would draw the eye and tempt a re-tap.
         const visible = bots().filter(function (b) { return b.dataset.state === wantState(); });
-        let center = focus;
-        const fi = visible.indexOf(focus);
-        if (fi >= 0 && visible.length >= 3) {
-            center = visible[Math.max(1, Math.min(visible.length - 2, fi))];
+        function isOpen(b) {
+            return b && !b.classList.contains("is-fixed") && !b.classList.contains("is-locked");
+        }
+
+        let center = null;
+        // After a fix, jump to the broken bot NEXT to the one we just fixed
+        // (prefer the next bot, else the previous), so the row progresses.
+        if (lastFixed && visible.indexOf(lastFixed) >= 0) {
+            const vi = visible.indexOf(lastFixed);
+            for (let d = 1; d < visible.length && !center; d++) {
+                if (isOpen(visible[vi + d])) center = visible[vi + d];
+                else if (isOpen(visible[vi - d])) center = visible[vi - d];
+            }
+        }
+        // First load (nothing fixed yet) or fallback: the first broken bot,
+        // nudged inward so THREE bots stay in view — but only if that inner
+        // neighbour is itself broken (so we don't re-centre a fixed bot).
+        if (!center) {
+            const first = visible.filter(isOpen)[0];
+            center = first;
+            const fi = visible.indexOf(first);
+            if (fi >= 0 && visible.length >= 3) {
+                const clamped = Math.max(1, Math.min(visible.length - 2, fi));
+                if (isOpen(visible[clamped])) center = visible[clamped];
+            }
         }
         if (center) { suppressScroll(600); center.scrollIntoView({ inline: "center", block: "nearest" }); }
         global.requestAnimationFrame(layout);

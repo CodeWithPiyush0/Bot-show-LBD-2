@@ -571,12 +571,14 @@
     filter: none;
 }
 
-/* A fixed bot shows its charged image happily dancing and can't be re-picked. */
+/* A fixed bot shows its charged image and can't be re-picked. It stays STILL
+   (no dance) — a dancing bot draws the eye and tempts kids to tap an already
+   -fixed bot, so the motion is reserved for the celebration screen. */
 .carousel-bot.is-fixed {
     cursor: default;
 }
 .carousel-bot.is-fixed img {
-    animation: botDance 1.25s ease-in-out infinite;
+    animation: none;
     transform-origin: bottom center;
 }
 
