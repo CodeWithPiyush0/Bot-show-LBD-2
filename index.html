@@ -27,6 +27,39 @@
     <link rel="stylesheet" href="css/responsive.css" />
 </head>
 <body>
+    <!-- Spider-Verse style RGB channel-split filters for the broken-bot glitch.
+         Each isolates the red channel and the cyan (green+blue) channels and
+         offsets them apart, then screen-blends to recombine — so aligned areas
+         keep their true colour while the edges fan out into red/cyan ghosts.
+         The glitch keyframes cycle these variants rapidly to make the split
+         vibrate (css/screen.css → @keyframes botGlitch). -->
+    <svg class="glitch-defs" aria-hidden="true" focusable="false"
+         style="position:absolute;width:0;height:0;pointer-events:none">
+        <defs>
+            <filter id="botRgb1" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">
+                <feColorMatrix in="SourceGraphic" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="r"/>
+                <feOffset in="r" dx="26" dy="0" result="ro"/>
+                <feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0" result="gb"/>
+                <feOffset in="gb" dx="-26" dy="0" result="gbo"/>
+                <feBlend in="ro" in2="gbo" mode="screen"/>
+            </filter>
+            <filter id="botRgb2" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">
+                <feColorMatrix in="SourceGraphic" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="r"/>
+                <feOffset in="r" dx="-18" dy="9" result="ro"/>
+                <feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0" result="gb"/>
+                <feOffset in="gb" dx="18" dy="-9" result="gbo"/>
+                <feBlend in="ro" in2="gbo" mode="screen"/>
+            </filter>
+            <filter id="botRgb3" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">
+                <feColorMatrix in="SourceGraphic" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="r"/>
+                <feOffset in="r" dx="34" dy="-6" result="ro"/>
+                <feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0" result="gb"/>
+                <feOffset in="gb" dx="-12" dy="6" result="gbo"/>
+                <feBlend in="ro" in2="gbo" mode="screen"/>
+            </filter>
+        </defs>
+    </svg>
+
     <!-- Game container: keeps the background and all game elements -->
     <main class="game" id="game">
         <div class="game__screen" id="stage">
