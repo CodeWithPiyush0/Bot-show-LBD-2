@@ -469,6 +469,7 @@
             const s3Bot = document.querySelector("#screen-3 .charged-bot img");
             if (s3Bot && window.currentScheme) {
                 s3Bot.src = "assets/images/" + window.currentScheme + "_bot_charged.webp";
+                s3Bot.dataset.scheme = window.currentScheme; // CSS picks the dance (blue = hover)
             }
             if (window.GameFx) window.GameFx.exitBot();
             global.setTimeout(function () { if (window.returnToChooser) window.returnToChooser(); }, 5100);
