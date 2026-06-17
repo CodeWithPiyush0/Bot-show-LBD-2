@@ -111,10 +111,11 @@
     cursor: pointer;
 }
 
-/* Right — white & blue bot: x=1327 y=417 w=356 */
+/* Right — blue bot (legless): lowered so it floats JUST above the floor
+   shadow (.floor--white ~y=898) instead of hovering high like it's flying. */
 .bot--white-blue {
     left: 69.115%;
-    top: 38.611%;
+    top: 42.5%;
     width: 18.542%;
 }
 
@@ -465,6 +466,17 @@
             drop-shadow(0 0.5cqw 1.2cqw rgba(0, 0, 0, 0.4))
             drop-shadow(0 0 1.4cqw rgba(255, 245, 210, 0.55));
     }
+    /* keep the legless blue bot floating while it scales on hover */
+    .level-2 .carousel-bot[data-scheme="blue"]:not(.is-fixed):not(.is-selected):hover img {
+        transform: translateY(-9%) scale(1.06);
+    }
+}
+/* The blue bot has no legs — lift it off the floor so it reads as FLOATING
+   just above the ground (its contact shadow stays at the floor). translateY
+   is relative to the bot's own height, so the gap is clearly visible without
+   it flying too high. */
+.carousel-bot[data-scheme="blue"] img {
+    transform: translateY(-9%);
 }
 /* Floor shadow under each bot (sits at the feet; scales with the bot). */
 .carousel-bot::before {
