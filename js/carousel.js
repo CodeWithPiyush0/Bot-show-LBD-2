@@ -253,7 +253,16 @@
                 return b.dataset.state === wantState() && !b.classList.contains("is-fixed") && !b.classList.contains("is-locked");
             })[0];
         }
-        if (focus) { suppressScroll(600); focus.scrollIntoView({ inline: "center", block: "nearest" }); }
+        // Keep THREE bots in view: if the focal bot sits at either end of the
+        // row, centre its inner neighbour instead so a side isn't left empty
+        // (the player drags/scrolls to reach the rest).
+        const visible = bots().filter(function (b) { return b.dataset.state === wantState(); });
+        let center = focus;
+        const fi = visible.indexOf(focus);
+        if (fi >= 0 && visible.length >= 3) {
+            center = visible[Math.max(1, Math.min(visible.length - 2, fi))];
+        }
+        if (center) { suppressScroll(600); center.scrollIntoView({ inline: "center", block: "nearest" }); }
         global.requestAnimationFrame(layout);
         global.setTimeout(layout, 60);
     }

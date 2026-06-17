@@ -448,6 +448,23 @@
     -webkit-user-drag: none;
     position: relative;
     z-index: 1;
+    transform-origin: bottom center;
+    transition: transform 0.18s ease, filter 0.18s ease;
+}
+/* Hover feedback (desktop): the bot lifts a touch and glows so it reads as
+   tappable. Scale lives on the <img> (the .carousel-bot transform is driven
+   inline by the coverflow layout, so it can't take a :hover transform).
+   Skipped for already-fixed bots and the one being chosen. */
+@media (hover: hover) {
+    .level-2 .carousel-bot:not(.is-fixed):not(.is-selected):hover {
+        cursor: pointer;
+    }
+    .level-2 .carousel-bot:not(.is-fixed):not(.is-selected):hover img {
+        transform: scale(1.06);
+        filter: brightness(1.08)
+            drop-shadow(0 0.5cqw 1.2cqw rgba(0, 0, 0, 0.4))
+            drop-shadow(0 0 1.4cqw rgba(255, 245, 210, 0.55));
+    }
 }
 /* Floor shadow under each bot (sits at the feet; scales with the bot). */
 .carousel-bot::before {
