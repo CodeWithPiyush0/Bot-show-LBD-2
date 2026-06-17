@@ -380,7 +380,6 @@
                 if (guideActive) guideEngaged = true;
                 e.preventDefault();
                 dragging = true;
-                if (global.SFX) global.SFX.play("pickup");
                 stageRect = stage.getBoundingClientRect();
                 startX = e.clientX; startY = e.clientY;
                 baseLeftPct = parseFloat(tile.style.left);
