@@ -1,3 +1,4 @@
 # Memory Index
 
 - [LBD-2 codes concept](lbd2-concept-codes.md) — Part 1 fixes bots by sorting number codes into slots, not batteries.
+- [LBD-2 tab pause](lbd2-tab-pause.md) — game freezes (timers + SFX) when tab hidden/minimized, via qa-freeze + audio.js.

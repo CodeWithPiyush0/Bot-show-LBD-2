@@ -93,18 +93,26 @@
         }
     }
 
-    function isCommentMode() {
-        return document.body.classList.contains("qa-intercept-on");
+    // The game freezes while EITHER the QA comment box is open OR the tab is
+    // hidden / the window is minimized (Page Visibility). Held timeouts replay
+    // in order on resume, so the game continues exactly where it left off; no
+    // SFX fire while hidden (audio.js guards play() on document.hidden, and the
+    // AudioContext is suspended on visibilitychange).
+    function shouldPause() {
+        return document.hidden || document.body.classList.contains("qa-intercept-on");
     }
 
     function watch() {
-        setPaused(isCommentMode());
+        setPaused(shouldPause());
         const observer = new MutationObserver(function () {
-            setPaused(isCommentMode());
+            setPaused(shouldPause());
         });
         observer.observe(document.body, {
             attributes: true,
             attributeFilter: ["class"],
+        });
+        document.addEventListener("visibilitychange", function () {
+            setPaused(shouldPause());
         });
     }
 

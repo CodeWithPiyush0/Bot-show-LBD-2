@@ -149,7 +149,9 @@
 
     function play(name, opts) {
         opts = opts || {};
-        if (muted || !FILES[name]) return null;
+        // Off-tab / minimized: stay silent (the game is paused too — see
+        // qa-freeze.js). The AudioContext is also suspended on visibilitychange.
+        if (muted || document.hidden || !FILES[name]) return null;
         if (ctx && buffers[name]) return playBuffer(name, opts);
         return playFallback(name, opts); // buffer not ready yet / no Web Audio
     }
