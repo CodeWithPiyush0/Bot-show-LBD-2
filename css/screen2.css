@@ -480,6 +480,11 @@
 .connectors.is-flowing .conn-flow path {
     animation: connFlow 0.7s linear infinite;
 }
+/* paths are drawn M=bottom → L=top, so a negative offset flows BOTTOM→TOP.
+   When the kid starts at the top (whole/big slot), flow TOP→BOTTOM instead. */
+.connectors.flow-down.is-flowing .conn-flow path {
+    animation: connFlowDown 0.7s linear infinite;
+}
 .connectors.is-green .conn-flow path {
     stroke: #e2fff0;
     filter: drop-shadow(0 0 5px #7dffb0);
@@ -487,6 +492,11 @@
 @keyframes connFlow {
     to {
         stroke-dashoffset: -78;
+    }
+}
+@keyframes connFlowDown {
+    to {
+        stroke-dashoffset: 78;
     }
 }
 

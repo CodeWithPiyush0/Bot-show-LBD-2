@@ -77,6 +77,7 @@
         let contentEl = null;
         let solved = false;
         let enabled = true;
+        let firstSlot = null;   // which slot the kid filled first (sets flow direction)
         const slotEls = {};
         const socketEls = {};
         const slotOccupant = {};
@@ -146,6 +147,7 @@
             freeSlotOf(tile);
             if (slotOccupant[id] && slotOccupant[id] !== tile) sendHome(slotOccupant[id]);
             slotOccupant[id] = tile;
+            if (!firstSlot) firstSlot = id;
             tile.dataset.location = id;
             tile.classList.add("in-slot");
             const r = SLOTS[id];
@@ -164,7 +166,12 @@
         function startSolve() {
             solved = true;
             abortHint(); cancelIdle(); stopGuide(); clearReject();
-            if (connectorsEl) connectorsEl.classList.add("is-flowing");
+            if (connectorsEl) {
+                // direction: started at the top (whole/big slot) → flow top→bottom;
+                // started at the bottom (a part/small slot) → flow bottom→top
+                connectorsEl.classList.toggle("flow-down", firstSlot === "big");
+                connectorsEl.classList.add("is-flowing");
+            }
             if (global.SFX) global.SFX.play("electricity", { loop: true });
             global.setTimeout(function () {
                 if (connectorsEl) connectorsEl.classList.add("is-green");
@@ -417,10 +424,11 @@
             createTiles();
             solved = false;
             enabled = false;
+            firstSlot = null;
             abortHint(); cancelIdle(); stopGuide(); clearReject();
             if (global.SFX) global.SFX.stop("electricity");
             contentEl.classList.remove("is-charged-final");
-            if (connectorsEl) connectorsEl.classList.remove("is-flowing", "is-green");
+            if (connectorsEl) connectorsEl.classList.remove("is-flowing", "is-green", "flow-down");
             DROPPABLE.forEach(function (id) { if (socketEls[id]) socketEls[id].classList.remove("is-charged"); });
             const dock = contentEl.querySelector(".code-dock");
             if (dock) { dock.style.opacity = ""; dock.style.display = ""; dock.style.pointerEvents = ""; dock.style.transition = ""; }
