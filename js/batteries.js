@@ -77,7 +77,6 @@
         let contentEl = null;
         let solved = false;
         let enabled = true;
-        let firstSlot = null;   // which slot the kid filled first (sets flow direction)
         const slotEls = {};
         const socketEls = {};
         const slotOccupant = {};
@@ -147,7 +146,6 @@
             freeSlotOf(tile);
             if (slotOccupant[id] && slotOccupant[id] !== tile) sendHome(slotOccupant[id]);
             slotOccupant[id] = tile;
-            if (!firstSlot) firstSlot = id;
             tile.dataset.location = id;
             tile.classList.add("in-slot");
             const r = SLOTS[id];
@@ -166,12 +164,8 @@
         function startSolve() {
             solved = true;
             abortHint(); cancelIdle(); stopGuide(); clearReject();
-            if (connectorsEl) {
-                // direction: started at the top (whole/big slot) → flow top→bottom;
-                // started at the bottom (a part/small slot) → flow bottom→top
-                connectorsEl.classList.toggle("flow-down", firstSlot === "big");
-                connectorsEl.classList.add("is-flowing");
-            }
+            // No travelling current-flow pulse — the connectors simply turn
+            // green below to mark success.
             if (global.SFX) global.SFX.play("electricity", { loop: true });
             global.setTimeout(function () {
                 if (connectorsEl) connectorsEl.classList.add("is-green");
@@ -431,7 +425,6 @@
             createTiles();
             solved = false;
             enabled = false;
-            firstSlot = null;
             abortHint(); cancelIdle(); stopGuide(); clearReject();
             if (global.SFX) global.SFX.stop("electricity");
             contentEl.classList.remove("is-charged-final");
