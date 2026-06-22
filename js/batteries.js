@@ -301,9 +301,11 @@
         }
 
         /* ---- guided tutorial (currentLevel === 1) ----
-           Glow EVERY undropped code + every empty slot and demo valid moves
-           (round-robin). The kid can place the codes in ANY order — top (whole
-           → big) or bottom (parts → small) first; nothing is locked. */
+           Demo ONE code at a time: glow the next un-dropped code (left→right in
+           the tray) + its target slot and loop a ghost of that single drag.
+           When the kid places it, this re-runs for the NEXT code, so the hint
+           walks the codes one by one. (Dragging itself is still free — nothing
+           is locked — the kid just sees one demo at a time.) */
         let guideActive = false;
 
         function clearGuideCue() {
@@ -313,14 +315,19 @@
         function cueTutorial() {
             if (!guideActive) return;
             clearGuideCue();
-            let any = false;
-            tiles.forEach(function (t) {
-                if (t.dataset.location === "dock") { t.classList.add("is-target"); any = true; }
-            });
-            DROPPABLE.forEach(function (id) {
-                if (!slotOccupant[id] && socketEls[id]) socketEls[id].classList.add("is-cue");
-            });
-            if (any) ghostRun(Infinity); // demo valid moves; the kid may do any of them
+            abortHint();
+            // the current code = the left-most code still in the tray
+            const undropped = tiles
+                .filter(function (t) { return t.dataset.location === "dock"; })
+                .sort(function (a, b) { return parseFloat(a.dataset.homeX) - parseFloat(b.dataset.homeX); });
+            if (!undropped.length) return;
+            const tile = undropped[0];
+            const targets = tile.dataset.role === "whole" ? ["big"] : ["small-left", "small-right"];
+            const dst = targets.filter(function (id) { return !slotOccupant[id]; })[0];
+            if (!dst) return;
+            tile.classList.add("is-target");
+            if (socketEls[dst]) socketEls[dst].classList.add("is-cue");
+            ghostLoop(tile, dst); // loop the demo for THIS code until it's placed
         }
         function startGuide() { guideActive = true; cueTutorial(); }
         function stopGuide() { guideActive = false; clearGuideCue(); }

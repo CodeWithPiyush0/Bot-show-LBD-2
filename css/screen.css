@@ -322,6 +322,11 @@
     white-space: nowrap;
 }
 
+/* Concept-lesson keyword highlights — make "parts" and "whole" pop in
+   distinct colours so the part/whole idea lands. */
+.question__text .hl-part  { color: #e0561b; }  /* the two PARTS — orange */
+.question__text .hl-whole { color: #1f6fd0; }  /* the one WHOLE — blue   */
+
 /* ===========================================================
    Level 2 Overrides
    =========================================================== */

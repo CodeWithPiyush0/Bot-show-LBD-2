@@ -61,14 +61,55 @@
         function clearTimers() { timers.forEach(global.clearTimeout); timers.length = 0; }
         function later(fn, ms) { timers.push(global.setTimeout(fn, ms)); }
 
-        function typewriter(el, text, speed) {
-            el.textContent = "";
+        function escapeHtml(s) {
+            return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // Split text into runs, wrapping each highlighted word in its colour
+        // class (highlights = [{word, cls}], first occurrence of each word).
+        function buildRuns(text, highlights) {
+            if (!highlights || !highlights.length) return [{ t: text }];
+            const ranges = [];
+            highlights.forEach(function (h) {
+                const idx = text.toLowerCase().indexOf(h.word.toLowerCase());
+                if (idx >= 0) ranges.push({ start: idx, end: idx + h.word.length, cls: h.cls });
+            });
+            ranges.sort(function (a, b) { return a.start - b.start; });
+            const runs = [];
+            let pos = 0;
+            ranges.forEach(function (r) {
+                if (r.start < pos) return;           // skip overlaps
+                if (r.start > pos) runs.push({ t: text.slice(pos, r.start) });
+                runs.push({ t: text.slice(r.start, r.end), cls: r.cls });
+                pos = r.end;
+            });
+            if (pos < text.length) runs.push({ t: text.slice(pos) });
+            return runs;
+        }
+
+        // Render the first `count` characters across the runs as HTML (so a
+        // half-typed highlighted word still shows in its colour).
+        function renderRuns(runs, count) {
+            let out = "", used = 0;
+            for (let k = 0; k < runs.length && used < count; k++) {
+                const r = runs[k];
+                const take = Math.min(r.t.length, count - used);
+                const chunk = escapeHtml(r.t.slice(0, take));
+                out += r.cls ? '<span class="' + r.cls + '">' + chunk + "</span>" : chunk;
+                used += take;
+            }
+            return out;
+        }
+
+        function typewriter(el, runs, speed) {
+            const total = runs.reduce(function (s, r) { return s + r.t.length; }, 0);
+            el.innerHTML = "";
             let i = 0;
             (function tick() {
-                if (i >= text.length) return;
-                el.textContent += text.charAt(i);
-                if (global.SFX) global.SFX.play("type");
+                if (i >= total) return;
                 i += 1;
+                el.innerHTML = renderRuns(runs, i);
+                if (global.SFX) global.SFX.play("type");
                 later(tick, speed);
             })();
         }
@@ -161,7 +202,7 @@
             }];
 
             if (q) q.classList.remove("is-open");
-            if (textEl) textEl.textContent = "";
+            if (textEl) textEl.innerHTML = "";
             setInitial(lessons[0].wholeFirst);
 
             const PHASE_AT = SLOT_GLOW_STAGGER + PHASE_GAP; // phase B start
@@ -177,7 +218,7 @@
             lessons.forEach(function (lesson) {
                 later(function () {
                     setInitial(lesson.wholeFirst);
-                    if (textEl) typewriter(textEl, lesson.text, TYPE_SPEED);
+                    if (textEl) typewriter(textEl, buildRuns(lesson.text, lesson.highlight), TYPE_SPEED);
                     var phaseA = lesson.wholeFirst ? phaseWhole : phaseParts;
                     var phaseB = lesson.wholeFirst ? phaseParts : phaseWhole;
                     phaseA();
@@ -203,8 +244,14 @@
         questionId: "question-4",
         getCodes: function () { return window.getCodes(1); },
         lessons: [
-            { text: "These two parts make this one whole.", wholeFirst: false },
-            { text: "This whole can be split into these two parts.", wholeFirst: true },
+            {
+                text: "These two parts make this one whole.", wholeFirst: false,
+                highlight: [{ word: "parts", cls: "hl-part" }, { word: "whole", cls: "hl-whole" }],
+            },
+            {
+                text: "This whole can be split into these two parts.", wholeFirst: true,
+                highlight: [{ word: "whole", cls: "hl-whole" }, { word: "parts", cls: "hl-part" }],
+            },
         ],
         fromScreenId: "screen-4",
         toScreenId: "screen-3",
