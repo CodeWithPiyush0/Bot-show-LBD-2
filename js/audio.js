@@ -56,7 +56,7 @@
     var MASTER = 0.85;                 // overall volume (the master gain node)
     var PER = {                        // per-sound trims (0..1, relative to master)
         type: 0.5, ready: 0.6, place: 0.7, energy: 0.7, electricity: 0.55,
-        oneScroll: 0.85, fullScroll: 0.85, glitch: 0.5,
+        oneScroll: 0.85, fullScroll: 0.85, glitch: 0.3,
         bgMusic: 0.26                  // quiet bed: 0.85 × 0.26 ≈ 22%
     };
 

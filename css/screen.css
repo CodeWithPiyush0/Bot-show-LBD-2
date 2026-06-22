@@ -137,34 +137,23 @@
    opacity) so per-bot base opacities like purple's recede are preserved.
    =========================================================== */
 @keyframes botGlitch {
-    /* clean most of the loop */
-    0%, 26%, 36%, 60%, 72%, 100% {
-        filter: none;
-        clip-path: inset(0 0 0 0);
-    }
-    /* ---- burst 1: rapid split + vibrate + tear ---- */
-    27% { filter: url(#botRgb1) brightness(1.25); clip-path: inset(0 0 0 0); }
-    29% { filter: url(#botRgb2) brightness(1.1);  clip-path: inset(0 0 14% 0); }
-    31% { filter: url(#botRgb3) brightness(1.3);  clip-path: inset(11% 0 0 0); }
-    33% { filter: url(#botRgb1) brightness(0.9);  clip-path: inset(6% 0 8% 0); }
-    35% { filter: url(#botRgb2) brightness(1.2);  clip-path: inset(0 0 0 0); }
-    /* ---- burst 2: sharper ---- */
-    61% { filter: url(#botRgb3) brightness(1.3);  clip-path: inset(0 0 0 0); }
-    63% { filter: url(#botRgb1) brightness(1.15); clip-path: inset(0 0 16% 0); }
-    65% { filter: url(#botRgb2) brightness(1.4) contrast(1.1); clip-path: inset(13% 0 0 0); }
-    67% { filter: url(#botRgb3) brightness(1.1);  clip-path: inset(8% 0 10% 0); }
-    69% { filter: url(#botRgb1) brightness(1.2);  clip-path: inset(0 0 0 0); }
-    71% { filter: none; clip-path: inset(0 0 0 0); }
+    /* clean almost the whole loop, then ONE gentle chromatic shimmer.
+       Small split offsets, NO clip "tear", NO brightness flash — a soft
+       wobble that reads as "a little glitchy" without confusing young kids. */
+    0%, 30%, 38%, 100% { filter: none; }
+    32% { filter: url(#botRgb1); }
+    34% { filter: url(#botRgb2); }
+    36% { filter: url(#botRgb1); }
 }
 
 /* Screen-1 tutorial bots (all broken) — desynced via different delays. */
 .bot--purple,
 .bot--orange,
 .bot--white-blue {
-    animation: botGlitch 3.2s steps(1, end) infinite;
+    animation: botGlitch 4.6s steps(1, end) infinite;
 }
-.bot--orange { animation-delay: -0.6s; }
-.bot--white-blue { animation-delay: -1.9s; }
+.bot--orange { animation-delay: -1.7s; }
+.bot--white-blue { animation-delay: -3.2s; }
 
 @media (prefers-reduced-motion: reduce) {
     .bot--purple,
@@ -510,13 +499,13 @@
    the current phase glitch; a fixed (dancing) bot has no animation. Desynced
    per scheme so the row doesn't flicker in unison. */
 .carousel-bot:not(.is-fixed) img {
-    animation: botGlitch 3.2s steps(1, end) infinite;
+    animation: botGlitch 4.6s steps(1, end) infinite;
 }
-.carousel-bot[data-scheme="gold"] img   { animation-delay: -0.3s; }
-.carousel-bot[data-scheme="blue"] img   { animation-delay: -1.2s; }
-.carousel-bot[data-scheme="purple"] img { animation-delay: -2.2s; }
-.carousel-bot[data-scheme="pink"] img   { animation-delay: -0.8s; }
-.carousel-bot[data-scheme="red"] img    { animation-delay: -2.7s; }
+.carousel-bot[data-scheme="gold"] img   { animation-delay: -0.4s; }
+.carousel-bot[data-scheme="blue"] img   { animation-delay: -1.8s; }
+.carousel-bot[data-scheme="purple"] img { animation-delay: -3.1s; }
+.carousel-bot[data-scheme="pink"] img   { animation-delay: -2.3s; }
+.carousel-bot[data-scheme="red"] img    { animation-delay: -3.9s; }
 @media (prefers-reduced-motion: reduce) {
     .carousel-bot:not(.is-fixed) img { animation: none; }
 }
