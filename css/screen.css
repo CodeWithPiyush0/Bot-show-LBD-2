@@ -69,11 +69,12 @@
     top: 84.722%;
     width: 30.417%;
     height: 13.889%;
+    /* Lavender light pool to match the spotlight beam over the lavender room. */
     background: radial-gradient(
         ellipse at center,
-        rgba(255, 196, 128, 0.55) 0%,
-        rgba(255, 158, 74, 0.28) 45%,
-        rgba(255, 140, 60, 0) 75%
+        rgba(227, 215, 245, 0.5) 0%,
+        rgba(205, 188, 230, 0.26) 45%,
+        rgba(195, 176, 224, 0) 75%
     );
     mix-blend-mode: screen;
     z-index: 3;
