@@ -30,22 +30,8 @@
     transform-origin: bottom center;
 }
 
-/* Gentle celebratory dance (placeholder for the video) */
-.screen--3.is-active .charged-bot img {
-    animation: botDance 1.25s ease-in-out infinite;
-}
-
-/* The blue bot has no legs — instead of the legged bounce (which pivots at the
-   feet) it does a HOVER dance: floats off the floor and bobs/sways smoothly
-   around its centre, like it's gently flying. */
-.screen--3.is-active .charged-bot img[data-scheme="blue"] {
-    transform-origin: center center;
-    animation: botHover 2.4s ease-in-out infinite;
-}
-@keyframes botHover {
-    0%, 100% { transform: translateY(-7%) rotate(-2.5deg); }
-    50%      { transform: translateY(-14%) rotate(2.5deg); }
-}
+/* The fixed bot dances via its animated GIF (assets/videos/*_bot_dancing.gif),
+   so no CSS dance is applied here — adding one would double the motion. */
 
 /* Banner opens/closes (class-driven, like the other screens). Starts closed
    (mascot only); "The bot is fully charged." types in while the bot dances. */

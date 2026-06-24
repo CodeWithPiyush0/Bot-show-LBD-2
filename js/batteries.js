@@ -468,8 +468,11 @@
         if (isLevel) {
             const s3Bot = document.querySelector("#screen-3 .charged-bot img");
             if (s3Bot && window.currentScheme) {
-                s3Bot.src = "assets/images/" + window.currentScheme + "_bot_charged.webp";
-                s3Bot.dataset.scheme = window.currentScheme; // CSS picks the dance (blue = hover)
+                // the fixed bot dances via its GIF (the GIF carries the motion)
+                s3Bot.src = window.danceGifSrc
+                    ? window.danceGifSrc(window.currentScheme)
+                    : "assets/videos/" + window.currentScheme + "_bot_dancing.gif";
+                s3Bot.dataset.scheme = window.currentScheme;
             }
             if (window.GameFx) window.GameFx.exitBot();
             global.setTimeout(function () { if (window.returnToChooser) window.returnToChooser(); }, 5100);

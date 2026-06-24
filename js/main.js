@@ -76,6 +76,18 @@
     }
     window.setPanelScheme = setPanelScheme;
 
+    // Scheme → dancing-bot GIF (the fixed bot dances via the GIF itself, no CSS
+    // dance needed). The gold scheme's golden bot is the "yellow" gif.
+    const DANCE_GIF = {
+        orange: "orange", gold: "yellow", blue: "blue",
+        purple: "purple", pink: "pink", red: "red",
+    };
+    function danceGifSrc(scheme) {
+        const g = DANCE_GIF[scheme] || scheme;
+        return "assets/videos/" + g + "_bot_dancing.gif";
+    }
+    window.danceGifSrc = danceGifSrc;
+
     function setupLevel(level) {
         window.currentLevel = level;
         // Bridge to the stage table: L1 = Tutorial, L2 = first chooser stage.
@@ -90,12 +102,12 @@
             if (game) game.classList.add("level-2");
             if (orangeBot) orangeBot.src = "assets/images/orange_bot_charged.webp";
             if (purpleBot) purpleBot.src = "assets/images/purple_bot_low.webp";
-            if (screen3Bot) { screen3Bot.src = "assets/images/purple_bot_charged.webp"; screen3Bot.dataset.scheme = "purple"; }
+            if (screen3Bot) { screen3Bot.src = danceGifSrc("purple"); screen3Bot.dataset.scheme = "purple"; }
         } else {
             if (game) game.classList.remove("level-2");
             if (orangeBot) orangeBot.src = "assets/images/orange_bot.webp";
             if (purpleBot) purpleBot.src = "assets/images/purple_bot_low.webp";
-            if (screen3Bot) { screen3Bot.src = "assets/images/orange_bot_charged.webp"; screen3Bot.dataset.scheme = "orange"; }
+            if (screen3Bot) { screen3Bot.src = danceGifSrc("orange"); screen3Bot.dataset.scheme = "orange"; }
         }
 
         // Panel colour scheme per bot/level.
