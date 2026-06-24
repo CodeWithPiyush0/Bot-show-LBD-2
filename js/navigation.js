@@ -12,10 +12,10 @@
     // Letterbox colour per screen, sampled from each screen's bg edges.
     const LETTERBOX = {
         "screen-pre": "#0a0130", // Pre-LBD purple theatre
-        "screen-1": "#5a3624", // room (BG.webp) brown
-        "screen-3": "#5a3624",
-        "screen-5": "#5a3624",
-        "screen-7": "#5a3624",
+        "screen-1": "#a294a3", // room (BG.webp) lavender wall
+        "screen-3": "#a294a3",
+        "screen-5": "#a294a3",
+        "screen-7": "#a294a3",
         // Interior screens (2/4/6/8): fixed cream letterbox that matches the
         // background outside the panel, the same for every bot/level.
         "screen-2": "#fbe7cb",
@@ -24,7 +24,7 @@
         "screen-8": "#fbe7cb",
         "screen-transition": "#05010a",
     };
-    const DEFAULT_LETTERBOX = "#5a3624";
+    const DEFAULT_LETTERBOX = "#a294a3";
 
     function applyLetterbox(screenId) {
         const game = document.getElementById("game");

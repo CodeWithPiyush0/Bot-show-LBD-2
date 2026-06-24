@@ -11,8 +11,8 @@
     /* Background asset */
     --bg-image: url("../assets/images/BG.webp");
 
-    /* Letterbox fill — sampled from the BG.png left/right edges */
-    --letterbox-color: #5a3624;
+    /* Letterbox fill — sampled from the BG.webp wall edges (lavender room) */
+    --letterbox-color: #a294a3;
 }
 
 /* Outer wrapper fills the viewport and centers the 16:9 stage.
