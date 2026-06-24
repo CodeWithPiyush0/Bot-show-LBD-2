@@ -14,6 +14,7 @@ When the game is final, surface a cleanup list and confirm before deleting. Know
 - **Dead CSS/JS**: `.battery*`, `.tray*`, old `slot-glow*`/`charge-fx`/`.panel--*` rules, unused `ghostLoop`, `getCounts` remnants.
 - **Bot SVG sources** converted to webp (the new bots): `*_bot_fixed.svg` / `*_bot_glitch.svg` (orange/blue/Golen/pink/purple/red) — verify webp in use, then remove the SVGs. Old `White_blue_bot.webp` (replaced by blue carousel bot).
 - **Audio**: `assets/audios/glitch_full.mp3` (4.8s original; the in-use `glitch.mp3` is a ~0.34s trim of region A 0.27s+). Remove the full source once the trim is final.
+- **Next button**: `assets/images/next_btn.png` (source for the new gold nav button), `assets/images/next_button.png` (old source), `assets/images/next_button_oldarrow.webp` (old arrow backup). In-use file is `next_button.webp` (cropped+converted new button, used for BOTH prev and next via `scaleX(-1)`).
 - **Video**: `assets/videos/bite_turn_oldbg.mp4` (the original flying/landing clip with the OLD brown room baked in). The in-use `bite_turn.mp4` was re-composited (difference-matte vs the clip's clean last frame) to put Bite over the new lavender `BG.webp`. Remove the old-bg backup once the new clip is approved.
 
 Grep every candidate (`git grep <name>`) to confirm zero references, and re-test the full flow after deleting.

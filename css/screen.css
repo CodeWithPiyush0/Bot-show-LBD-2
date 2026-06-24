@@ -434,7 +434,7 @@
     top: 46%;
     transform: translateY(-50%);
     width: 8.5cqw;
-    height: 6.4cqw; /* 485:365 aspect of next_button.webp */
+    height: 6.26cqw; /* 1226:903 aspect of next_button.webp */
     border: 0;
     padding: 0;
     background: url("../assets/images/next_button.webp") no-repeat center / 100% 100%;
