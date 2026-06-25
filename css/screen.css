@@ -570,6 +570,7 @@
    -fixed bot, so the motion is reserved for the celebration screen. */
 .carousel-bot.is-fixed {
     cursor: default;
+    opacity: 0.75; /* slightly faded so it reads as "done" — not tappable */
 }
 .carousel-bot.is-fixed img {
     animation: none;
