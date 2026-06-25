@@ -313,7 +313,10 @@
         if (video) { try { video.pause(); } catch (e) {} }
         window.GameNav.show("screen-1");                        // becomes active (deactivates turn screen)
         if (screen1) screen1.classList.remove("is-elements-in"); // restore bg + clear element transforms
-        if (window.BotChooser) window.BotChooser.enterChooser(false); // re-centre, fully shown
+        // Re-settle SILENTLY: keep the banner text (already typed during the
+        // slide) and the scroll position — only re-run the coverflow layout. A
+        // full enterChooser() here re-typed the text and re-scrolled the row.
+        if (window.BotChooser) window.BotChooser.enterChooser(false, true);
     }
     window.startBotsPull = startBotsPull;
     window.finalizeTurn = finalizeTurn;

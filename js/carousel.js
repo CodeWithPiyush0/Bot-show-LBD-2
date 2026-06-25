@@ -213,7 +213,10 @@
     // the current phase; if every level is done, completes the game.
     // centerFixed: bring the just-fixed (dancing) bot to the front instead of
     // the next selectable one — so the player sees their bot celebrating.
-    function enterChooser(centerFixed) {
+    // silent = re-settle only: keep the current banner text + scroll position
+    // (used for the post-slide re-centre in the "your turn" hand-off, so the
+    // text doesn't type a 2nd time and the row doesn't scroll again).
+    function enterChooser(centerFixed, silent) {
         const screen1 = document.getElementById("screen-1");
         if (screen1) screen1.classList.remove("is-choosing", "is-lit");
         bots().forEach(function (b) {
@@ -234,14 +237,16 @@
 
         // Banner text per part, so the player knows what to do. Use the
         // cancellable Screen 1 typer so it can't be clobbered.
-        const textEl = document.querySelector("#screen-1 .question__text");
-        const msg = phase === "split"
-            ? "Oh no! These bots are overcharged — tap one to fix it."
-            : "Scroll and tap a bot to fix it.";
-        if (window.Screen1Intro && window.Screen1Intro.setText) {
-            window.Screen1Intro.setText(msg);
-        } else if (textEl) {
-            textEl.textContent = msg;
+        if (!silent) {
+            const textEl = document.querySelector("#screen-1 .question__text");
+            const msg = phase === "split"
+                ? "Oh no! These bots are overcharged — tap one to fix it."
+                : "Scroll and tap a bot to fix it.";
+            if (window.Screen1Intro && window.Screen1Intro.setText) {
+                window.Screen1Intro.setText(msg);
+            } else if (textEl) {
+                textEl.textContent = msg;
+            }
         }
 
         // Always centre a STILL-BROKEN (tappable) bot — never the just-fixed
@@ -273,7 +278,9 @@
                 if (isOpen(visible[clamped])) center = visible[clamped];
             }
         }
-        if (center) { suppressScroll(600); center.scrollIntoView({ inline: "center", block: "nearest" }); }
+        // Keep the existing scroll position when silent (don't re-scroll the row);
+        // just re-run the coverflow layout now that the elements are settled.
+        if (center && !silent) { suppressScroll(600); center.scrollIntoView({ inline: "center", block: "nearest" }); }
         global.requestAnimationFrame(layout);
         global.setTimeout(layout, 60);
     }
