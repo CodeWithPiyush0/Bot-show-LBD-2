@@ -25,6 +25,7 @@ import {
 } from './qa-storage.js';
 import { createPopupModule } from './qa-popup.js';
 import { createSidebarModule } from './qa-sidebar.js';
+import { initQaFreeze } from './qa-freeze.js';
 
 function isQAActive() {
     return new URLSearchParams(location.search).get('qa') === 'true';
@@ -427,6 +428,7 @@ function showRoleModal({ initialName = '', initialRole = '', isSwitch = false } 
 async function init() {
     if (!isQAActive()) return;
 
+    initQaFreeze(); // freeze the game while the comment box is open (via GamePause)
     injectStylesheet();
     document.body.setAttribute('data-qa', 'true');
 
