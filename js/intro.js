@@ -10,10 +10,18 @@
 
     const TYPE_SPEED = 45; // ms per character
 
+    // A shared token cancels any in-flight typer: starting a new one (or calling
+    // cancelTyping on navigation) bumps it, so a running loop can't keep
+    // appending characters after its banner was reset/hidden.
+    let typeToken = 0;
+    function cancelTyping() { typeToken += 1; }
+
     function typewriter(el, text, speed, onDone) {
+        const token = ++typeToken;
         el.textContent = "";
         let i = 0;
         (function tick() {
+            if (token !== typeToken) return; // superseded / cancelled
             if (i >= text.length) {
                 if (onDone) onDone();
                 return;
@@ -25,16 +33,14 @@
         })();
     }
 
-    // Cancellable typewriter for the Screen 1 banner: a new call cancels any
-    // in-flight one (token bump), so re-setting the text (e.g. the chooser's
-    // split-phase message) can't be clobbered by an earlier run.
-    let s1Token = 0;
+    // Cancellable typewriter for the Screen 1 banner: shares the same token, so
+    // a new call (or cancelTyping on navigation) supersedes any in-flight run.
     function typeScreen1(el, text) {
-        const token = ++s1Token;
+        const token = ++typeToken;
         el.textContent = "";
         let i = 0;
         (function tick() {
-            if (token !== s1Token || i >= text.length) return;
+            if (token !== typeToken || i >= text.length) return;
             el.textContent += text.charAt(i);
             if (window.SFX) window.SFX.play("type"); // one tick per character
             i += 1;
@@ -190,4 +196,5 @@
     }
 
     window.Screen3Intro = { showMessage: showScreen3Message };
+    window.cancelTyping = cancelTyping; // stop any in-flight banner typer (used on navigation)
 })();

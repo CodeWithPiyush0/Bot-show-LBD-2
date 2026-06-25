@@ -32,9 +32,27 @@
     }
 
     function doShow(screenId) {
+        // Stop any in-flight banner typer so it can't keep appending characters
+        // after we clear/hide its banner below.
+        if (window.cancelTyping) window.cancelTyping();
         const screens = document.querySelectorAll(".screen");
         screens.forEach((screen) => {
-            screen.classList.toggle("is-active", screen.id === screenId);
+            const on = screen.id === screenId;
+            screen.classList.toggle("is-active", on);
+            // Reset the banner on every screen being HIDDEN (it rolls shut
+            // invisibly while the screen fades out): close it AND clear its
+            // text. Otherwise the left-open banner — or its leftover text (a
+            // separate <p>, NOT clipped by the template) — flashes on the next
+            // show before that screen's intro reopens/retypes it. (Fixes the
+            // screen-3 "banner appears twice" + "text shows while closed".)
+            if (!on) {
+                const q = screen.querySelector(".question");
+                if (q) {
+                    q.classList.remove("is-open");
+                    const txt = q.querySelector(".question__text");
+                    if (txt) txt.textContent = "";
+                }
+            }
         });
         applyLetterbox(screenId);
     }
