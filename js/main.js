@@ -424,6 +424,10 @@
         }
 
         function enterBot() {
+            // Shuffle + build the codes NOW, while screen-2 is still hidden, so
+            // the random dock order is set backstage and never flicks order once
+            // the screen is revealed. (Screen2Intro's setup() then no-ops.)
+            if (window.Batteries && window.Batteries.setup) window.Batteries.setup();
             enterBotTo("screen-2", function () {
                 if (window.Screen2Intro) window.Screen2Intro.play();
             });
@@ -445,8 +449,7 @@
                 });
             } else {
                 if (window.setPanelScheme) window.setPanelScheme(["screen-2", "screen-4"], scheme);
-                // Same for the charge board (screen-2): clear it before it's shown.
-                if (window.Batteries && window.Batteries.setup) window.Batteries.setup();
+                // enterBot() runs setup() backstage before the zoom reveal.
                 enterBot();
             }
         }

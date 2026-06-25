@@ -419,6 +419,19 @@
 
         function setup() {
             if (!contentEl) return;
+            // Idempotent: if the board ALREADY shows exactly these codes,
+            // untouched (all three in the dock, not solved), keep the existing
+            // shuffle. setup() runs twice around the enter transition (once
+            // backstage before the zoom, once from Screen2Intro on settle) — a
+            // second re-shuffle would be VISIBLE as the codes flicking order.
+            const want = opts.getCodes() || { whole: 8, parts: [5, 3] };
+            const wantKey = [want.whole, want.parts[0], want.parts[1]].sort(function (a, b) { return a - b; }).join(",");
+            const haveKey = tiles.map(function (t) { return Number(t.dataset.value); }).sort(function (a, b) { return a - b; }).join(",");
+            const allInDock = tiles.length === 3 && tiles.every(function (t) { return t.dataset.location === "dock"; });
+            if (!solved && allInDock && wantKey === haveKey) {
+                enabled = false; // keep it locked like a fresh setup; no re-shuffle
+                return;
+            }
             contentEl.querySelectorAll(".code-tile").forEach(function (el) { el.remove(); });
             tiles.length = 0;
             DROPPABLE.forEach(function (id) { slotOccupant[id] = null; });
