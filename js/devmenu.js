@@ -11,62 +11,86 @@
     "use strict";
 
     // Each entry: label + the action that shows/sets up that screen.
-    // (Reuses the same entry points the deep-links / flow use.)
+    // Matches the CURRENT single flow: one guided TUTORIAL, then 5 chooser
+    // LEVELS (no separate Part 2). Every jump first hardReset()s, so an
+    // in-flight animation from the previous screen can't bleed through.
     const SCREENS = [
         { label: "▶  Play from the start", go: function () { call(global, "startGame"); } },
-        { label: "0 · Start screen (Pre-LBD)", go: function () { nav("screen-pre"); } },
+        { label: "0 · Start screen", go: function () { nav("screen-pre"); } },
 
-        { label: "—  PART 1 · charge tutorial  —", go: null },
-        { label: "1 · Choose bot (3 bots)", go: function () { tut(1); nav("screen-1"); call(global.Screen1Intro, "play"); } },
-        { label: "2 · Charge puzzle", go: function () { tut(1); nav("screen-2"); call(global.Screen2Intro, "play"); } },
-        { label: "3 · Charged bot dances", go: function () { tut(1); danceBot("screen-3", "orange_bot_charged"); } },
-        { label: "4 · Concept (2 parts → whole)", go: function () { tut(1); nav("screen-4"); call(global.ConceptScreen, "play"); } },
-        { label: "★ \"Your turn\" video → levels", go: function () { yourTurn(1); } },
+        { label: "—  tutorial  —", go: null },
+        { label: "1 · Pick the bot (3 bots)", go: function () { tut(); nav("screen-1"); call(global.Screen1Intro, "play"); } },
+        { label: "2 · Puzzle — sort the codes", go: function () { tut(); puzzle(); } },
+        { label: "4 · Concept — parts ↔ whole", go: function () { tut(); nav("screen-4"); call(global.ConceptScreen, "play"); } },
+        { label: "3 · Bot fixed — dances", go: function () { tut(); danceBot("orange"); } },
+        { label: "★  \"Your turn\" → levels", go: function () { tut(); if (global.showYourTurn) global.showYourTurn(1); } },
 
-        { label: "—  PART 1 · charge levels  —", go: null },
-        { label: "Charge chooser · level 1", go: function () { chooser(1, 1); } },
-        { label: "Charge chooser · level 4", go: function () { chooser(4, 1); } },
-        { label: "Charge puzzle (level 1)", go: function () { chooserPuzzle(1, 1, "blue"); } },
+        { label: "—  levels (bot chooser)  —", go: null },
+        { label: "Chooser · level 1", go: function () { chooser(1); } },
+        { label: "Chooser · level 5", go: function () { chooser(5); } },
+        { label: "Puzzle · level 1 (blue)", go: function () { chooserPuzzle(1, "blue"); } },
+        { label: "Bot dances · level 1 (blue)", go: function () { chooserDance(1, "blue"); } },
 
-        { label: "—  PART 2 · split tutorial  —", go: null },
-        { label: "5 · Overcharged intro", go: function () { tut(2); nav("screen-5"); call(global.Part2, "startIntro"); } },
-        { label: "6 · Split puzzle", go: function () { tut(2); nav("screen-6"); call(global.Part2, "startSplit"); } },
-        { label: "7 · Fixed bot dances", go: function () { tut(2); danceBot("screen-7", "White_purple_bot_charged"); } },
-        { label: "8 · Concept (whole → 2 parts)", go: function () { tut(2); nav("screen-8"); call(global.Part2, "playConcept2"); } },
-        { label: "★ \"Your turn\" video → levels", go: function () { yourTurn(2); } },
-
-        { label: "—  PART 2 · split levels  —", go: null },
-        { label: "Split chooser · level 1", go: function () { chooser(1, 2); } },
-        { label: "Split chooser · level 4", go: function () { chooser(4, 2); } },
-        { label: "Split puzzle (level 1)", go: function () { chooserPuzzle(1, 2, "red"); } },
-
-        { label: "—  misc  —", go: null },
-        { label: "Level-complete curtain", go: function () { if (global.playCurtain) global.playCurtain("", "", function () { chooser(2, 1); }, 1500); } },
-        { label: "Game-complete curtain", go: function () { if (global.playCurtain) global.playCurtain("All Bots Fixed!", "Fantastic work!", function () { global.gamePart = 1; setLvl(1); nav("screen-pre"); }); } },
+        { label: "—  transitions  —", go: null },
+        { label: "Next-level curtain", go: function () { if (global.playCurtain) global.playCurtain("", "", function () { chooser(2); }, 1500); } },
+        { label: "All Bots Fixed! (game end)", go: function () { if (global.playCurtain) global.playCurtain("All Bots Fixed!", "Fantastic work — you fixed every bot!", function () { setLvl(1); nav("screen-pre"); }); } },
     ];
 
-    // A tutorial screen belongs to a part but is the GUIDED flow (not the chooser).
-    function tut(part) {
-        global.gamePart = part;
-        setLvl(1);
+    /* ---- hard reset: the fix for overlapping / doubled screens ----
+       Jumping mid-animation used to leave the previous screen's timers
+       (zoom hand-offs, intros, finales, returnToChooser) pending — they'd
+       fire AFTER the jump and yank a screen back in. Cancel every pending
+       timer, silence SFX, and strip the transient transition classes an
+       interrupted animation leaves behind, so the target screen is clean. */
+    function hardReset() {
+        try {
+            const maxId = global.setTimeout(function () {}, 0);
+            for (let i = 1; i <= maxId; i++) global.clearTimeout(i);
+        } catch (e) { /* ignore */ }
+        if (global.SFX && global.SFX.stopAll) global.SFX.stopAll();
+
+        const TRANSIENT = ["is-zooming", "is-zooming-out", "is-entering", "is-revealing",
+            "is-choosing", "is-lit", "is-elements-in", "is-compact", "is-open", "is-spotlit",
+            "is-focusing", "is-gone", "is-hidden", "is-intro", "is-shown", "is-closed",
+            "no-snap", "is-selected"];
+        document.querySelectorAll(
+            ".screen, #s2-content, #s6-content, .question, .carousel-bot, #bot-carousel, #curtains, .turn-bubble"
+        ).forEach(function (el) {
+            TRANSIENT.forEach(function (c) { el.classList.remove(c); });
+        });
+        const tv = document.getElementById("turn-video");
+        if (tv) { try { tv.pause(); tv.currentTime = 0; } catch (e) { /* ignore */ } }
     }
 
-    // Show a celebrating-bot screen with a specific charged sprite.
-    function danceBot(screenId, sprite) {
-        const img = document.querySelector("#" + screenId + " .charged-bot img");
-        if (img) { img.removeAttribute("data-src"); img.src = "assets/images/" + sprite + ".webp"; }
-        nav(screenId);
+    // Tutorial = guided level 1 (3-bot Screen 1, gameStage 0). setupLevel(1)
+    // also sets the tutorial panel scheme (orange) + screen-3 dance gif.
+    function tut() { setLvl(1); global.currentScheme = "orange"; }
+
+    // Jump to the code puzzle (screen-2). `scheme` overrides the panel for a
+    // level; omitted = keep the scheme setupLevel already applied (tutorial).
+    function puzzle(scheme) {
+        if (scheme) {
+            global.currentScheme = scheme;
+            if (global.setPanelScheme) global.setPanelScheme(["screen-2", "screen-4"], scheme);
+        }
+        nav("screen-2");
+        call(global.Screen2Intro, "play");
     }
 
-    // Play the "Now it's your turn" Bite video, which hands off to that part's levels.
-    function yourTurn(part) {
-        if (global.showYourTurn) global.showYourTurn(part);
+    // Show the celebrating (dancing) bot on screen-3 for a scheme (uses the gif).
+    function danceBot(scheme) {
+        const img = document.querySelector("#screen-3 .charged-bot img");
+        if (img) {
+            img.removeAttribute("data-src");
+            img.src = global.danceGifSrc ? global.danceGifSrc(scheme)
+                                         : "assets/videos/" + scheme + "_bot_dancing.gif";
+            img.dataset.scheme = scheme;
+        }
+        nav("screen-3");
     }
 
-    // Jump into the chooser at a given level (1-4) for a part (1 = charge low
-    // bots, 2 = split overcharged bots).
-    function chooser(stage, part) {
-        global.gamePart = part || 1;
+    // Enter the bot chooser at a given level (1-5).
+    function chooser(stage) {
         setLvl(2);
         global.gameStage = stage;
         if (global.BotChooser && global.BotChooser.reset) global.BotChooser.reset();
@@ -74,21 +98,17 @@
         call(global.Screen1Intro, "play");
     }
 
-    // Jump straight into a chooser-level puzzle (part 1 = charge, 2 = split).
-    function chooserPuzzle(stage, part, scheme) {
-        global.gamePart = part;
+    // Jump straight into a level's puzzle / dance with a chosen bot scheme.
+    function chooserPuzzle(stage, scheme) {
+        setLvl(2);
+        global.gameStage = stage;
+        puzzle(scheme);
+    }
+    function chooserDance(stage, scheme) {
         setLvl(2);
         global.gameStage = stage;
         global.currentScheme = scheme;
-        if (part === 2) {
-            if (global.setPanelScheme) global.setPanelScheme(["screen-6", "screen-8"], scheme);
-            nav("screen-6");
-            call(global.Part2, "startSplit");
-        } else {
-            if (global.setPanelScheme) global.setPanelScheme(["screen-2", "screen-4"], scheme);
-            nav("screen-2");
-            call(global.Screen2Intro, "play");
-        }
+        danceBot(scheme);
     }
 
     function setLvl(lvl) {
@@ -170,6 +190,7 @@
             b.type = "button";
             b.textContent = s.label;
             b.addEventListener("click", function () {
+                hardReset();   // cancel in-flight timers/animations from the current screen
                 s.go();
                 panel.classList.remove("is-open");
             });
