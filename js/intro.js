@@ -124,7 +124,23 @@
         // Initialize/reset batteries configuration for current level
         if (window.Batteries && window.Batteries.setup) window.Batteries.setup();
 
-        // Lock dragging and start compact + closed.
+        // LEVELS: the kid already learned the mechanic in the tutorial, so skip
+        // the instruction banner entirely — keep it closed, board at full size,
+        // and just make the puzzle playable after a short settle beat. (The
+        // banner still opens for the dance + chooser, just not while fixing.)
+        if (window.currentLevel === 2) {
+            if (content) content.classList.remove("is-compact");
+            q.classList.remove("is-open");
+            textEl.textContent = "";
+            if (window.Batteries) window.Batteries.setEnabled(false);
+            window.setTimeout(function () {
+                if (window.Batteries && window.Batteries.playHint) window.Batteries.playHint();
+                else if (window.Batteries) window.Batteries.setEnabled(true);
+            }, 450);
+            return;
+        }
+
+        // TUTORIAL: lock dragging and start compact + closed.
         if (window.Batteries) window.Batteries.setEnabled(false);
         if (content) content.classList.add("is-compact");
         q.classList.remove("is-open");
