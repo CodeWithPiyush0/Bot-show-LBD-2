@@ -14,10 +14,10 @@
    Loaded FIRST (before the other game scripts) so every later
    setTimeout / setInterval call is the wrapped version.
 
-   Extensible via window.GamePause so optional tools can contribute:
+   Extensible via window.GamePause so optional tools (e.g. a QA comment
+   tool) can contribute extra pause conditions:
      • addCondition(fn)  — fn() → true means "the game should be paused"
-                           (the QA comment tool uses this; see
-                           qa/qa-freeze.js). document.hidden is built in.
+                           (document.hidden is built in).
      • addExemption(fn)  — fn() → true means "never freeze THIS timer"
                            (so a tool's own UI timers keep running while
                            the game is frozen).
