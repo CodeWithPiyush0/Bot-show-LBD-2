@@ -479,13 +479,10 @@
     /* =================== Part 1 instance (Screen 2) =================== */
     function part1Solved(isLevel) {
         if (isLevel) {
-            const s3Bot = document.querySelector("#screen-3 .charged-bot img");
-            if (s3Bot && window.currentScheme) {
-                // the fixed bot dances via its GIF (the GIF carries the motion)
-                s3Bot.src = window.danceGifSrc
-                    ? window.danceGifSrc(window.currentScheme)
-                    : "assets/videos/" + window.currentScheme + "_bot_dancing.gif";
-                s3Bot.dataset.scheme = window.currentScheme;
+            // the fixed bot dances via its GIF; setDanceBot preloads + decode-
+            // gates the swap so the right bot shows cleanly (no stale flash).
+            if (window.setDanceBot && window.currentScheme) {
+                window.setDanceBot(window.currentScheme);
             }
             if (window.GameFx) window.GameFx.exitBot();
             global.setTimeout(function () { if (window.returnToChooser) window.returnToChooser(); }, 5100);

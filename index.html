@@ -253,10 +253,10 @@
                 <!-- Fully-charged bot (static image placeholder; swap for a
                      dancing video later). -->
                 <div class="charged-bot">
-                    <img
-                        data-src="assets/images/orange_bot_charged.webp"
-                        alt="The bot, fully charged"
-                    />
+                    <!-- No static default: the dancing GIF is set + decode-gated
+                         by setDanceBot() (js/main.js), so a wrong/static bot can
+                         never flash before the right dance loads. -->
+                    <img alt="The fixed bot, dancing" />
                 </div>
 
                 <!-- Banner: announces the result while the bot dances -->

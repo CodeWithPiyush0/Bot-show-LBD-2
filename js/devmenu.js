@@ -77,15 +77,10 @@
         call(global.Screen2Intro, "play");
     }
 
-    // Show the celebrating (dancing) bot on screen-3 for a scheme (uses the gif).
+    // Show the celebrating (dancing) bot on screen-3 for a scheme (uses the gif,
+    // via the shared preload + decode-gated swap).
     function danceBot(scheme) {
-        const img = document.querySelector("#screen-3 .charged-bot img");
-        if (img) {
-            img.removeAttribute("data-src");
-            img.src = global.danceGifSrc ? global.danceGifSrc(scheme)
-                                         : "assets/videos/" + scheme + "_bot_dancing.gif";
-            img.dataset.scheme = scheme;
-        }
+        if (global.setDanceBot) global.setDanceBot(scheme);
         nav("screen-3");
     }
 

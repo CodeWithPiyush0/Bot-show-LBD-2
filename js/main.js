@@ -88,6 +88,41 @@
     }
     window.danceGifSrc = danceGifSrc;
 
+    // Preload every dancing GIF (~1.8 MB each) so the dance never waits on a
+    // download on a live/slow connection — which is what made the previous bot
+    // (or the static default) flash before the right gif arrived. The Image
+    // refs are kept so the cache entries aren't dropped.
+    const DANCE_PRELOAD = [];
+    function preloadDanceGifs() {
+        if (DANCE_PRELOAD.length) return;
+        Object.keys(DANCE_GIF).forEach(function (scheme) {
+            const im = new Image();
+            im.src = danceGifSrc(scheme);
+            DANCE_PRELOAD.push(im);
+        });
+    }
+    window.preloadDanceGifs = preloadDanceGifs;
+
+    // Swap the screen-3 bot to a scheme's dancing GIF WITHOUT a stale-frame
+    // flash: hide it, set the (preloaded → instant) src, and reveal only once
+    // the first frame has actually decoded. So you never see the previous bot,
+    // the static default, or a half-loaded frame — the dance starts clean.
+    function setDanceBot(scheme) {
+        const img = document.querySelector("#screen-3 .charged-bot img");
+        if (!img) return;
+        img.removeAttribute("data-src"); // never fall back to the static default
+        img.dataset.scheme = scheme;     // CSS picks the dance (blue = hover)
+        const src = danceGifSrc(scheme);
+        const reveal = function () { img.style.opacity = "1"; };
+        if (img.getAttribute("src") === src && img.complete) { reveal(); return; }
+        img.style.opacity = "0";
+        img.src = src;
+        if (img.decode) { img.decode().then(reveal).catch(reveal); }
+        else if (img.complete) { reveal(); }
+        else { img.onload = reveal; }
+    }
+    window.setDanceBot = setDanceBot;
+
     function setupLevel(level) {
         window.currentLevel = level;
         // Bridge to the stage table: L1 = Tutorial, L2 = first chooser stage.
@@ -96,18 +131,17 @@
         const game = document.getElementById("game");
         const orangeBot = document.querySelector(".bot--orange");
         const purpleBot = document.querySelector(".bot--purple");
-        const screen3Bot = document.querySelector("#screen-3 .charged-bot img");
 
         if (level === 2) {
             if (game) game.classList.add("level-2");
             if (orangeBot) orangeBot.src = "assets/images/orange_bot_charged.webp";
             if (purpleBot) purpleBot.src = "assets/images/purple_bot_low.webp";
-            if (screen3Bot) { screen3Bot.src = danceGifSrc("purple"); screen3Bot.dataset.scheme = "purple"; }
+            setDanceBot("purple");
         } else {
             if (game) game.classList.remove("level-2");
             if (orangeBot) orangeBot.src = "assets/images/orange_bot.webp";
             if (purpleBot) purpleBot.src = "assets/images/purple_bot_low.webp";
-            if (screen3Bot) { screen3Bot.src = danceGifSrc("orange"); screen3Bot.dataset.scheme = "orange"; }
+            setDanceBot("orange");
         }
 
         // Panel colour scheme per bot/level.
@@ -562,6 +596,7 @@
             img.src = img.getAttribute("data-src");
             img.removeAttribute("data-src");
         });
+        preloadDanceGifs(); // warm the dance GIFs so the celebration never waits
     }
     if (document.readyState === "complete") {
         loadDeferred();
