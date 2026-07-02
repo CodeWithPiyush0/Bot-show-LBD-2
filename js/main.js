@@ -184,6 +184,31 @@
     }
     window.playCurtain = playCurtain;
 
+    // Minimal celebratory confetti — a small shower of coloured pieces that
+    // drift down over the closed curtain, then remove themselves. Called only
+    // on the game-complete curtain.
+    function launchConfetti(host) {
+        const old = host.querySelector(".curtain-confetti");
+        if (old) old.remove();
+        const layer = document.createElement("div");
+        layer.className = "curtain-confetti";
+        const colors = ["#ffd24d", "#ffffff", "#ff8a5c", "#7fd1ff", "#c88bff", "#8affc1"];
+        const N = 26;
+        for (let i = 0; i < N; i++) {
+            const p = document.createElement("i");
+            p.style.left = (Math.random() * 100).toFixed(2) + "%";
+            p.style.background = colors[i % colors.length];
+            p.style.animationDelay = (Math.random() * 0.7).toFixed(2) + "s";
+            p.style.animationDuration = (1.8 + Math.random() * 0.9).toFixed(2) + "s";
+            p.style.setProperty("--drift", ((Math.random() * 2 - 1) * 7).toFixed(1) + "cqw");
+            p.style.setProperty("--spin", (180 + Math.random() * 540).toFixed(0) + "deg");
+            if (i % 3 === 0) p.style.borderRadius = "50%"; // mix in a few round confetti
+            layer.appendChild(p);
+        }
+        host.appendChild(layer);
+        window.setTimeout(function () { layer.remove(); }, 3600);
+    }
+
     // Tutorial → levels handoff: a TEXTLESS curtain closes over the dancing
     // bot, parts on the bare stage, then the "your turn" CLIP plays IN FULL —
     // Bite FLIES in, does a superhero LANDING, says the line (speech bubble),
@@ -501,7 +526,7 @@
             if ((window.gameStage || 1) > 5) {
                 // All 5 level bots are fixed → the game is complete.
                 if (window.SFX) window.SFX.play("win");
-                playCurtain("All Bots Fixed!", "Fantastic work — you fixed every bot!", function () {
+                playCurtain("All Bots Fixed!", "", function () {
                     setupLevel(1);
                     // The start screen now offers PLAY AGAIN (the game's been
                     // beaten), not the first-time PLAY button.
@@ -514,6 +539,9 @@
                     }
                     window.GameNav.show("screen-pre");
                 });
+                // A little celebratory confetti over the closed curtain.
+                const curtainsEl = document.getElementById("curtains");
+                if (curtainsEl) window.setTimeout(function () { launchConfetti(curtainsEl); }, 400);
             } else {
                 // Next level — TEXTLESS curtain (no level text).
                 playCurtain("", "", function () {

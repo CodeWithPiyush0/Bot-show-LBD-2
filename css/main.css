@@ -146,6 +146,37 @@ body.qa-intercept-on #stage *::after {
     transform: translateX(0);
 }
 
+/* Minimal celebratory confetti on the game-complete curtain (spawned by
+   launchConfetti in main.js; each <i> is one falling piece). */
+.curtain-confetti {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 1; /* above the velvet, below the message text */
+}
+.curtain-confetti i {
+    position: absolute;
+    top: -5%;
+    width: 0.9cqw;
+    height: 1.5cqw;
+    border-radius: 1px;
+    opacity: 0;
+    will-change: transform, opacity;
+    animation-name: confettiFall;
+    animation-timing-function: cubic-bezier(0.4, 0.1, 0.7, 1);
+    animation-fill-mode: forwards;
+}
+@keyframes confettiFall {
+    0%   { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0; }
+    12%  { opacity: 1; }
+    88%  { opacity: 1; }
+    100% { transform: translateY(112vh) translateX(var(--drift, 0)) rotate(var(--spin, 360deg)); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .curtain-confetti { display: none; }
+}
+
 .curtain-text {
     position: absolute;
     inset: 0;
@@ -158,6 +189,7 @@ body.qa-intercept-on #stage *::after {
     opacity: 0;
     transform: translateY(1.2cqw);
     transition: opacity 0.4s ease 0.4s, transform 0.4s ease 0.4s;
+    z-index: 2; /* keep the message crisp above the confetti */
 }
 .curtains.is-closed .curtain-text {
     opacity: 1;
