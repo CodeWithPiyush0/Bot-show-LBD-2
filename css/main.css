@@ -251,6 +251,11 @@ body.qa-intercept-on #stage *::after {
     pointer-events: none;
     -webkit-user-drag: none;
 }
+/* The end-of-game "Play again" button sits a little bigger than the first-time
+   Play button. */
+.play-btn--icon.play-btn--again {
+    width: 21cqw;
+}
 .play-btn--icon:hover {
     filter: brightness(1.06) drop-shadow(0 0.9cqw 1.1cqw rgba(0, 0, 0, 0.4));
 }

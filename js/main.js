@@ -503,12 +503,15 @@
                 if (window.SFX) window.SFX.play("win");
                 playCurtain("All Bots Fixed!", "Fantastic work — you fixed every bot!", function () {
                     setupLevel(1);
-                    // The start screen now offers a REPLAY (the game's been beaten),
-                    // not the first-time PLAY button.
+                    // The start screen now offers PLAY AGAIN (the game's been
+                    // beaten), not the first-time PLAY button.
                     const playImg = document.querySelector("#play-btn img");
                     const playBtn = document.getElementById("play-btn");
-                    if (playImg) playImg.src = "assets/images/replay_btn.webp";
-                    if (playBtn) playBtn.setAttribute("aria-label", "Replay");
+                    if (playImg) playImg.src = "assets/images/play_again.webp";
+                    if (playBtn) {
+                        playBtn.setAttribute("aria-label", "Play again");
+                        playBtn.classList.add("play-btn--again"); // a touch bigger
+                    }
                     window.GameNav.show("screen-pre");
                 });
             } else {
